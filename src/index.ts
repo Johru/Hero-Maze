@@ -12,8 +12,11 @@ let heroRight = document.getElementById('hero-right') as HTMLImageElement;
 let floor = document.getElementById('floor') as HTMLImageElement;
 let wall = document.getElementById('wall') as HTMLImageElement;
 let boss = document.getElementById('boss') as HTMLImageElement;
+let blood = document.getElementById('blood') as HTMLImageElement;
 let tileWidth: number = 65;
 let monsterLevel: number = 1;
+let monsterHasKey: number = 1;
+let monstersMove: boolean = false;
 let heroStats = {
   x: 0,
   y: 0,
@@ -23,11 +26,12 @@ let heroStats = {
   currentHP: 6,
   DP: d6(2),
   SP: d6(1) + 7,
+  hasKey: false,
 };
 let skeletonSetup = {
-  1: [5, 4],
-  2: [10, 1],
-  3: [5, 8],
+  1: [8, 6],
+  2: [5, 4],
+  3: [5, 9],
 };
 heroStats.currentHP = heroStats.maxHP;
 class Monster {
@@ -39,6 +43,7 @@ class Monster {
   DP: number;
   SP: number;
   alive: boolean;
+  hasKey: boolean;
   constructor(
     order: number,
     x: number = 0,
@@ -90,6 +95,8 @@ monsterList.push(skeleton3);
 for (let monster of monsterList) {
   monster.init();
 }
+
+assignKey();
 let wallPositionList: number[][] = [
   [4, 1],
   [4, 2],
@@ -129,6 +136,19 @@ let wallPositionList: number[][] = [
   [9, 8],
   [9, 9],
 ];
+
+for (let j = 1; j < 11; j++) {
+  wallPositionList.push([j, 11]);
+}
+for (let j = 1; j < 11; j++) {
+  wallPositionList.push([j, 0]);
+}
+for (let k = 1; k < 11; k++) {
+  wallPositionList.push([0, k]);
+}
+for (let k = 1; k < 11; k++) {
+  wallPositionList.push([11, k]);
+}
 function d6(numberOfRolls: number) {
   let total: number = 0;
   for (let i = 0; i < numberOfRolls; i++) {
@@ -137,53 +157,130 @@ function d6(numberOfRolls: number) {
   return total;
 }
 function updateGameState() {
+
   clearCanvas();
   renderFloor();
   renderWalls();
-  renderHero();
   printstats();
-  for (let i = 0; i < monsterList.length; i++) {
-    renderMonster(monsterList[i]);
-  }
+  renderHero();
+  renderAllMonsters();
+  resetMonsterMoveTimer();
+  renderHero();
+  checkIfBattleForMonsters();
   checkIfHeroDead();
   checkRoundEnd();
 }
+function resetMonsterMoveTimer() {
+  if (monstersMove) {
+    monstersMove = false;
+  } else {
+    monstersMove = true;
+  }
+}
+function renderAllMonsters() {
+  for (let i = 0; i < monsterList.length; i++) {
+    renderMonster(monsterList[i]);
+  }
+}
 
 function checkRoundEnd() {
-  if (bossMonster.alive == false) {
+  if (bossMonster.alive == false && heroStats.hasKey) {
     heroStats.x = 0;
     heroStats.y = 0;
-    let hpGainRandomizer = Math.random() * 101;
+    heroStats.hasKey = false;
+    let hpGainRandomizer = Math.random() * 100 + 1;
     console.log(hpGainRandomizer);
     if (hpGainRandomizer <= 10) {
       heroStats.currentHP = heroStats.maxHP;
       console.log('Full HP restored!');
     }
     if (40 >= hpGainRandomizer && hpGainRandomizer > 10) {
-      heroStats.currentHP = heroStats.currentHP+Math.floor(heroStats.maxHP / 3);
+      heroStats.currentHP =
+        heroStats.currentHP + Math.floor(heroStats.maxHP / 3);
       console.log('A third of HP restored!');
     }
     if (hpGainRandomizer > 40) {
-      heroStats.currentHP =heroStats.currentHP+ Math.floor(heroStats.maxHP / 10);
+      heroStats.currentHP =
+        heroStats.currentHP + Math.floor(heroStats.maxHP / 10);
       console.log('A tenth of HP restored!');
     }
     monsterLevel++;
+
     for (let monster of monsterList) {
       monster.init();
     }
+    assignKey();
   }
+}
+
+function assignKey() {
+  monsterHasKey = Math.floor(Math.random() * 3) + 1;
+  console.log(monsterHasKey);
 }
 function checkIfHeroDead() {
   if (heroStats.currentHP < 1) {
     window.location.reload();
   }
 }
-function renderMonster(type: Monster) {
-  if (type.alive) {
+function monsterDestination(input: number, specimen: Monster) {
+  switch (input) {
+    case 1: //down
+      destination = [specimen.x, specimen.y + 1];
+      break;
+    case 2: //up
+      destination = [specimen.x, specimen.y - 1];
+      break;
+    case 3: //left
+      destination = [specimen.x - 1, specimen.y];
+      break;
+    case 4: //right
+      destination = [specimen.x + 1, specimen.y];
+      break;
+  }
+}
+
+function attemptToMoveMonster(specimen: Monster) {
+  if (monstersMove) {
+    let direction: number = 0;
+    let hasMoved: boolean = false;
+    let stopIfInfinite:number = 0;
+    while (!hasMoved) {
+      if (stopIfInfinite>100)break;
+      direction = Math.floor(Math.random() * 4) + 1;
+      monsterDestination(direction, specimen);
+
+      if (checkIfMoveAllowed()&&checkOtherMonsters(specimen)) {
+        specimen.x = destination[0];
+        specimen.y = destination[1];
+        hasMoved = true;
+      }
+      stopIfInfinite++
+    }
+  }
+}
+
+function checkOtherMonsters(specimen:Monster){
+  for (let i=0;i<monsterList.length;i++){
+    if (i==specimen.orderNumber) continue;
+    if (monsterList[i].x == destination[0]&&monsterList[i].y == destination[1]){return false}
+  }
+  return true;
+}
+function renderMonster(specimen: Monster) {
+  if (specimen.alive) {
+    attemptToMoveMonster(specimen);
     ctx.drawImage(
-      eval(type.image),
-      (type.x - 1) * tileWidth,
-      (type.y - 1) * tileWidth,
+      eval(specimen.image),
+      (specimen.x - 1) * tileWidth,
+      (specimen.y - 1) * tileWidth,
+      tileWidth,
+      tileWidth
+    );
+  } else {
+    ctx.drawImage(
+      blood,
+      (specimen.x - 1) * tileWidth,
+      (specimen.y - 1) * tileWidth,
       tileWidth,
       tileWidth
     );
@@ -199,7 +296,7 @@ export function renderFloor() {
 }
 
 function renderWalls() {
-  for (let i: number = 0; i < wallPositionList.length; i++) {
+  for (let i: number = 0; i < wallPositionList.length - 40; i++) {
     renderWallTile(wallPositionList[i][0] - 1, wallPositionList[i][1] - 1);
   }
 }
@@ -232,11 +329,38 @@ function printstats() {
   ctx.fillText(`HP:       ${bossMonster.HP}`, 660, 225);
   ctx.fillText(`DP:       ${bossMonster.DP}`, 660, 250);
   ctx.fillText(`SP:       ${bossMonster.SP}`, 660, 275);
-  ctx.fillText(`You havent found the key yet.`, 660, 300);
+  if (heroStats.hasKey) {
+    ctx.fillText(`You have the key to next level!`, 660, 300);
+  } else {
+    ctx.fillText(`You havent found the key yet.`, 660, 300);
+  }
+  ctx.font = '13px Arial';
+  ctx.fillText(
+    `One of the Skeletons has a key. To win a level, you must find the key`,
+    660,
+    500
+  );
+  ctx.fillText(`and defeat the Boss.`, 660, 515);
+  ctx.fillText(
+    `Whenever you win a level, map will reset, you keep your progress `,
+    660,
+    530
+  );
+  ctx.fillText(`but the level of monsters goes up, so be careful!`, 660, 545);
+  ctx.fillText(`When your HP drops to 0, you die and game restarts.`, 660, 560);
+  ctx.fillText(
+    `Killing Skeletons increases your hero level, use them to get stronger early on.`,
+    660,
+    575
+  );
+  ctx.fillText(`Winning a level has a chance to restore your HP.`, 660, 590);
 }
-function checkIfMoveAllowed() {
+function attemptToMoveHero() {
   makeDestination();
   checkIfBattle();
+  return checkIfMoveAllowed();
+}
+function checkIfMoveAllowed() {
   for (let i = 0; i < wallPositionList.length; i++) {
     if (
       destination[0] == wallPositionList[i][0] &&
@@ -267,7 +391,11 @@ function battle(monster: Monster) {
   heroStats.DP += 1;
   heroStats.SP += 1;
   heroStats.level++;
+  if (monster.orderNumber == monsterHasKey) {
+    heroStats.hasKey = true;
+  }
 }
+
 function checkIfBattle() {
   for (let monster of monsterList) {
     if (
@@ -279,6 +407,15 @@ function checkIfBattle() {
     }
   }
 }
+
+function checkIfBattleForMonsters() {
+  for (let monster of monsterList) {
+    if (heroStats.x+1 == monster.x && heroStats.y+1 == monster.y && monster.alive) {
+      battle(monster);
+    }
+  }
+}
+
 function makeDestination() {
   if (heroStats.facing == 'heroDown')
     return (destination = [heroStats.x + 1, heroStats.y + 2]);
@@ -290,19 +427,6 @@ function makeDestination() {
     return (destination = [heroStats.x + 2, heroStats.y + 1]);
 }
 function renderHero() {
-  if (heroStats.x < 0) {
-    heroStats.x = 0;
-  }
-  if (heroStats.y < 0) {
-    heroStats.y = 0;
-  }
-  if (heroStats.x > 9) {
-    heroStats.x = 9;
-  }
-  if (heroStats.y > 9) {
-    heroStats.y = 9;
-  }
-
   ctx.drawImage(
     eval(heroStats.facing),
     heroStats.x * tileWidth,
@@ -321,28 +445,28 @@ document.addEventListener('keydown', function (keyHit) {
   switch (keyHit.key) {
     case 'ArrowDown':
       heroStats.facing = 'heroDown';
-      if (checkIfMoveAllowed()) {
+      if (attemptToMoveHero()) {
         heroStats.y++;
       }
       updateGameState();
       break;
     case 'ArrowUp':
       heroStats.facing = 'heroUp';
-      if (checkIfMoveAllowed()) {
+      if (attemptToMoveHero()) {
         heroStats.y--;
       }
       updateGameState();
       break;
     case 'ArrowLeft':
       heroStats.facing = 'heroLeft';
-      if (checkIfMoveAllowed()) {
+      if (attemptToMoveHero()) {
         heroStats.x--;
       }
       updateGameState();
       break;
     case 'ArrowRight':
       heroStats.facing = 'heroRight';
-      if (checkIfMoveAllowed()) {
+      if (attemptToMoveHero()) {
         heroStats.x++;
       }
       updateGameState();

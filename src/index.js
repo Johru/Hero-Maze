@@ -28,8 +28,11 @@ var heroRight = document.getElementById('hero-right');
 var floor = document.getElementById('floor');
 var wall = document.getElementById('wall');
 var boss = document.getElementById('boss');
+var blood = document.getElementById('blood');
 var tileWidth = 65;
 var monsterLevel = 1;
+var monsterHasKey = 1;
+var monstersMove = false;
 var heroStats = {
     x: 0,
     y: 0,
@@ -38,12 +41,13 @@ var heroStats = {
     maxHP: d6(3) + 20,
     currentHP: 6,
     DP: d6(2),
-    SP: d6(1) + 7
+    SP: d6(1) + 7,
+    hasKey: false
 };
 var skeletonSetup = {
-    1: [5, 4],
-    2: [10, 1],
-    3: [5, 8]
+    1: [8, 6],
+    2: [5, 4],
+    3: [5, 9]
 };
 heroStats.currentHP = heroStats.maxHP;
 var Monster = /** @class */ (function () {
@@ -103,6 +107,7 @@ for (var _i = 0, monsterList_1 = monsterList; _i < monsterList_1.length; _i++) {
     var monster = monsterList_1[_i];
     monster.init();
 }
+assignKey();
 var wallPositionList = [
     [4, 1],
     [4, 2],
@@ -142,6 +147,18 @@ var wallPositionList = [
     [9, 8],
     [9, 9],
 ];
+for (var j = 1; j < 11; j++) {
+    wallPositionList.push([j, 11]);
+}
+for (var j = 1; j < 11; j++) {
+    wallPositionList.push([j, 0]);
+}
+for (var k = 1; k < 11; k++) {
+    wallPositionList.push([0, k]);
+}
+for (var k = 1; k < 11; k++) {
+    wallPositionList.push([11, k]);
+}
 function d6(numberOfRolls) {
     var total = 0;
     for (var i = 0; i < numberOfRolls; i++) {
@@ -153,30 +170,47 @@ function updateGameState() {
     clearCanvas();
     renderFloor();
     renderWalls();
-    renderHero();
     printstats();
-    for (var i = 0; i < monsterList.length; i++) {
-        renderMonster(monsterList[i]);
-    }
+    renderHero();
+    renderAllMonsters();
+    resetMonsterMoveTimer();
+    renderHero();
+    checkIfBattleForMonsters();
     checkIfHeroDead();
     checkRoundEnd();
 }
+function resetMonsterMoveTimer() {
+    if (monstersMove) {
+        monstersMove = false;
+    }
+    else {
+        monstersMove = true;
+    }
+}
+function renderAllMonsters() {
+    for (var i = 0; i < monsterList.length; i++) {
+        renderMonster(monsterList[i]);
+    }
+}
 function checkRoundEnd() {
-    if (bossMonster.alive == false) {
+    if (bossMonster.alive == false && heroStats.hasKey) {
         heroStats.x = 0;
         heroStats.y = 0;
-        var hpGainRandomizer = Math.random() * 101;
+        heroStats.hasKey = false;
+        var hpGainRandomizer = Math.random() * 100 + 1;
         console.log(hpGainRandomizer);
         if (hpGainRandomizer <= 10) {
             heroStats.currentHP = heroStats.maxHP;
             console.log('Full HP restored!');
         }
         if (40 >= hpGainRandomizer && hpGainRandomizer > 10) {
-            heroStats.currentHP = heroStats.currentHP + Math.floor(heroStats.maxHP / 3);
+            heroStats.currentHP =
+                heroStats.currentHP + Math.floor(heroStats.maxHP / 3);
             console.log('A third of HP restored!');
         }
         if (hpGainRandomizer > 40) {
-            heroStats.currentHP = heroStats.currentHP + Math.floor(heroStats.maxHP / 10);
+            heroStats.currentHP =
+                heroStats.currentHP + Math.floor(heroStats.maxHP / 10);
             console.log('A tenth of HP restored!');
         }
         monsterLevel++;
@@ -184,16 +218,70 @@ function checkRoundEnd() {
             var monster = monsterList_2[_i];
             monster.init();
         }
+        assignKey();
     }
+}
+function assignKey() {
+    monsterHasKey = Math.floor(Math.random() * 3) + 1;
+    console.log(monsterHasKey);
 }
 function checkIfHeroDead() {
     if (heroStats.currentHP < 1) {
         window.location.reload();
     }
 }
-function renderMonster(type) {
-    if (type.alive) {
-        ctx.drawImage(eval(type.image), (type.x - 1) * tileWidth, (type.y - 1) * tileWidth, tileWidth, tileWidth);
+function monsterDestination(input, specimen) {
+    switch (input) {
+        case 1: //down
+            destination = [specimen.x, specimen.y + 1];
+            break;
+        case 2: //up
+            destination = [specimen.x, specimen.y - 1];
+            break;
+        case 3: //left
+            destination = [specimen.x - 1, specimen.y];
+            break;
+        case 4: //right
+            destination = [specimen.x + 1, specimen.y];
+            break;
+    }
+}
+function attemptToMoveMonster(specimen) {
+    if (monstersMove) {
+        var direction = 0;
+        var hasMoved = false;
+        var stopIfInfinite = 0;
+        while (!hasMoved) {
+            if (stopIfInfinite > 100)
+                break;
+            direction = Math.floor(Math.random() * 4) + 1;
+            monsterDestination(direction, specimen);
+            if (checkIfMoveAllowed() && checkOtherMonsters(specimen)) {
+                specimen.x = destination[0];
+                specimen.y = destination[1];
+                hasMoved = true;
+            }
+            stopIfInfinite++;
+        }
+    }
+}
+function checkOtherMonsters(specimen) {
+    for (var i = 0; i < monsterList.length; i++) {
+        if (i == specimen.orderNumber)
+            continue;
+        if (monsterList[i].x == destination[0] && monsterList[i].y == destination[1]) {
+            return false;
+        }
+    }
+    return true;
+}
+function renderMonster(specimen) {
+    if (specimen.alive) {
+        attemptToMoveMonster(specimen);
+        ctx.drawImage(eval(specimen.image), (specimen.x - 1) * tileWidth, (specimen.y - 1) * tileWidth, tileWidth, tileWidth);
+    }
+    else {
+        ctx.drawImage(blood, (specimen.x - 1) * tileWidth, (specimen.y - 1) * tileWidth, tileWidth, tileWidth);
     }
 }
 function renderFloor() {
@@ -205,7 +293,7 @@ function renderFloor() {
 }
 exports.renderFloor = renderFloor;
 function renderWalls() {
-    for (var i = 0; i < wallPositionList.length; i++) {
+    for (var i = 0; i < wallPositionList.length - 40; i++) {
         renderWallTile(wallPositionList[i][0] - 1, wallPositionList[i][1] - 1);
     }
 }
@@ -229,11 +317,27 @@ function printstats() {
     ctx.fillText("HP:       ".concat(bossMonster.HP), 660, 225);
     ctx.fillText("DP:       ".concat(bossMonster.DP), 660, 250);
     ctx.fillText("SP:       ".concat(bossMonster.SP), 660, 275);
-    ctx.fillText("You havent found the key yet.", 660, 300);
+    if (heroStats.hasKey) {
+        ctx.fillText("You have the key to next level!", 660, 300);
+    }
+    else {
+        ctx.fillText("You havent found the key yet.", 660, 300);
+    }
+    ctx.font = '13px Arial';
+    ctx.fillText("One of the Skeletons has a key. To win a level, you must find the key", 660, 500);
+    ctx.fillText("and defeat the Boss.", 660, 515);
+    ctx.fillText("Whenever you win a level, map will reset, you keep your progress ", 660, 530);
+    ctx.fillText("but the level of monsters goes up, so be careful!", 660, 545);
+    ctx.fillText("When your HP drops to 0, you die and game restarts.", 660, 560);
+    ctx.fillText("Killing Skeletons increases your hero level, use them to get stronger early on.", 660, 575);
+    ctx.fillText("Winning a level has a chance to restore your HP.", 660, 590);
 }
-function checkIfMoveAllowed() {
+function attemptToMoveHero() {
     makeDestination();
     checkIfBattle();
+    return checkIfMoveAllowed();
+}
+function checkIfMoveAllowed() {
     for (var i = 0; i < wallPositionList.length; i++) {
         if (destination[0] == wallPositionList[i][0] &&
             destination[1] == wallPositionList[i][1])
@@ -262,6 +366,9 @@ function battle(monster) {
     heroStats.DP += 1;
     heroStats.SP += 1;
     heroStats.level++;
+    if (monster.orderNumber == monsterHasKey) {
+        heroStats.hasKey = true;
+    }
 }
 function checkIfBattle() {
     for (var _i = 0, monsterList_3 = monsterList; _i < monsterList_3.length; _i++) {
@@ -269,6 +376,14 @@ function checkIfBattle() {
         if (destination[0] == monster.x &&
             destination[1] == monster.y &&
             monster.alive) {
+            battle(monster);
+        }
+    }
+}
+function checkIfBattleForMonsters() {
+    for (var _i = 0, monsterList_4 = monsterList; _i < monsterList_4.length; _i++) {
+        var monster = monsterList_4[_i];
+        if (heroStats.x + 1 == monster.x && heroStats.y + 1 == monster.y && monster.alive) {
             battle(monster);
         }
     }
@@ -284,18 +399,6 @@ function makeDestination() {
         return (destination = [heroStats.x + 2, heroStats.y + 1]);
 }
 function renderHero() {
-    if (heroStats.x < 0) {
-        heroStats.x = 0;
-    }
-    if (heroStats.y < 0) {
-        heroStats.y = 0;
-    }
-    if (heroStats.x > 9) {
-        heroStats.x = 9;
-    }
-    if (heroStats.y > 9) {
-        heroStats.y = 9;
-    }
     ctx.drawImage(eval(heroStats.facing), heroStats.x * tileWidth, heroStats.y * tileWidth, tileWidth, tileWidth);
 }
 function clearCanvas() {
@@ -306,28 +409,28 @@ document.addEventListener('keydown', function (keyHit) {
     switch (keyHit.key) {
         case 'ArrowDown':
             heroStats.facing = 'heroDown';
-            if (checkIfMoveAllowed()) {
+            if (attemptToMoveHero()) {
                 heroStats.y++;
             }
             updateGameState();
             break;
         case 'ArrowUp':
             heroStats.facing = 'heroUp';
-            if (checkIfMoveAllowed()) {
+            if (attemptToMoveHero()) {
                 heroStats.y--;
             }
             updateGameState();
             break;
         case 'ArrowLeft':
             heroStats.facing = 'heroLeft';
-            if (checkIfMoveAllowed()) {
+            if (attemptToMoveHero()) {
                 heroStats.x--;
             }
             updateGameState();
             break;
         case 'ArrowRight':
             heroStats.facing = 'heroRight';
-            if (checkIfMoveAllowed()) {
+            if (attemptToMoveHero()) {
                 heroStats.x++;
             }
             updateGameState();
