@@ -1,53 +1,52 @@
 "use strict";
 exports.__esModule = true;
-var functions_1 = require("./functions");
-document.write('Testtest');
-(0, functions_1.renderFloor2)();
+exports.renderFloor = void 0;
+//import {renderFloor} from './functions'
 var destination = [];
-var canvas = document.querySelector(".main-canvas");
-var ctx = canvas.getContext("2d");
-var skeleton = document.getElementById("skeleton");
-var heroUp = document.getElementById("hero-up");
-var heroDown = document.getElementById("hero-down");
-var heroLeft = document.getElementById("hero-left");
-var heroRight = document.getElementById("hero-right");
-var floor = document.getElementById("floor");
-var wall = document.getElementById("wall");
-var boss = document.getElementById("boss");
-var bossMonster = { type: 'boss', x: 5, y: 4, alive: true };
-var skeleton1 = { type: 'skeleton1', x: 5, y: 9, alive: true };
-var skeleton2 = { x: 10, y: 10, alive: true };
-var skeleton3 = { x: 10, y: 1, alive: true };
+var canvas = document.querySelector('.main-canvas');
+var ctx = canvas.getContext('2d');
+var skeleton = document.getElementById('skeleton');
+var heroUp = document.getElementById('hero-up');
+var heroDown = document.getElementById('hero-down');
+var heroLeft = document.getElementById('hero-left');
+var heroRight = document.getElementById('hero-right');
+var floor = document.getElementById('floor');
+var wall = document.getElementById('wall');
+var boss = document.getElementById('boss');
 var tileWidth = 65;
-var heroCoordinates = {
+var heroStats = {
     x: 0,
     y: 0,
-    facing: "heroDown"
+    facing: 'heroDown',
+    level: 1,
+    maxHP: d6(3) + 20,
+    currentHP: 6,
+    DP: d6(2),
+    SP: d6(1) + 7
 };
+heroStats.currentHP = heroStats.maxHP;
 var Monster = /** @class */ (function () {
-    function Monster(x, y, alive) {
+    function Monster(x, y, image, hp, DP, SP, alive) {
         if (alive === void 0) { alive = true; }
         this.x = x;
-        this.y - y;
+        this.y = y;
+        this.image = image;
+        this.HP = hp;
+        this.DP = DP;
+        this.SP = SP;
         this.alive = alive;
     }
-    Monster.prototype.spawn = function () {
-        ctx.drawImage(boss, 4 * tileWidth, 3 * tileWidth, tileWidth, tileWidth);
-    };
     return Monster;
 }());
-var bossMonsterFromClass = new Monster(5, 4);
-/*
-let skeleton1:Monster=new Monster (5,9);
-let skeleton2:Monster=new Monster (10,10);
-let skeleton3:Monster=new Monster (10,1);
-let monsterList:Monster[]=[];
+var bossMonster = new Monster(10, 10, 'boss', d6(3), d6(1), d6(1) + 1);
+var skeleton1 = new Monster(5, 9, 'skeleton', d6(2), Math.floor(d6(1) / 2), d6(1));
+var skeleton2 = new Monster(5, 4, 'skeleton', d6(2), Math.floor(d6(1) / 2), d6(1));
+var skeleton3 = new Monster(10, 1, 'skeleton', d6(2), Math.floor(d6(1) / 2), d6(1));
+var monsterList = [];
 monsterList.push(bossMonster);
 monsterList.push(skeleton1);
 monsterList.push(skeleton2);
 monsterList.push(skeleton3);
-alert(monsterList)
-*/
 var wallPositionList = [
     [4, 1],
     [4, 2],
@@ -87,6 +86,22 @@ var wallPositionList = [
     [9, 8],
     [9, 9],
 ];
+function d6(numberOfRolls) {
+    return numberOfRolls * (Math.floor(Math.random() * 6) + 1);
+}
+function updateGameState() {
+    clearCanvas();
+    renderFloor();
+    renderWalls();
+    renderHero();
+    printstats();
+    for (var i = 0; i < monsterList.length; i++) {
+        renderBoss(monsterList[i]);
+    }
+}
+function renderBoss(type) {
+    ctx.drawImage(eval(type.image), (type.x - 1) * tileWidth, (type.y - 1) * tileWidth, tileWidth, tileWidth);
+}
 function renderFloor() {
     for (var i = 0; i < 10; i++) {
         for (var j = 0; j < 10; j++) {
@@ -94,6 +109,7 @@ function renderFloor() {
         }
     }
 }
+exports.renderFloor = renderFloor;
 function renderWalls() {
     for (var i = 0; i < wallPositionList.length; i++) {
         renderWallTile(wallPositionList[i][0] - 1, wallPositionList[i][1] - 1);
@@ -103,97 +119,90 @@ function renderWallTile(xPosition, yPosition) {
     ctx.drawImage(wall, xPosition * tileWidth, yPosition * tileWidth, tileWidth, tileWidth);
 }
 function printstats() {
-    ctx.font = '25px Arial';
-    ctx.fillText('Stats:', 660, 20);
-    ctx.fillText("Facing: ".concat(heroCoordinates.facing), 660, 50);
-}
-function renderMonster(monsterName) {
-    ctx.drawImage(eval(monsterName), (eval(monsterName).x - 1) * tileWidth, 3 * tileWidth, tileWidth, tileWidth);
-}
-function renderSkeleton() {
-    ctx.drawImage(skeleton, 4 * tileWidth, 8 * tileWidth, tileWidth, tileWidth);
+    ctx.font = '20px Arial';
+    ctx.fillText('Stats:', 660, 25);
+    ctx.fillText("Level: ".concat(heroStats.level), 660, 50);
+    ctx.fillText("HP:    ".concat(heroStats.currentHP, "/").concat(heroStats.maxHP), 660, 75);
+    ctx.fillText("DP:    ".concat(heroStats.DP), 660, 100);
+    ctx.fillText("SP:    ".concat(heroStats.SP), 660, 125);
+    if (bossMonster.alive) {
+        ctx.fillText("Boss is still alive!", 660, 175);
+        ctx.fillText("HP:     ".concat(bossMonster.HP), 660, 200);
+        ctx.fillText("DP:     ".concat(bossMonster.DP), 660, 225);
+        ctx.fillText("SP:     ".concat(bossMonster.SP), 660, 250);
+    }
 }
 function checkIfMoveAllowed() {
+    makeDestination();
+    checkIfBattle();
     for (var i = 0; i < wallPositionList.length; i++) {
-        makeDestination();
         if (destination[0] == wallPositionList[i][0] &&
             destination[1] == wallPositionList[i][1])
             return false;
     }
     return true;
 }
+function checkIfBattle() {
+    if (destination[0] == bossMonster.x && destination[1] == bossMonster.y) {
+        console.log('Fight!');
+    }
+}
 function makeDestination() {
-    if (heroCoordinates.facing == "heroDown")
-        return (destination = [heroCoordinates.x + 1, heroCoordinates.y + 2]);
-    if (heroCoordinates.facing == "heroUp")
-        return (destination = [heroCoordinates.x + 1, heroCoordinates.y]);
-    if (heroCoordinates.facing == "heroLeft")
-        return (destination = [heroCoordinates.x, heroCoordinates.y + 1]);
-    if (heroCoordinates.facing == "heroRight")
-        return (destination = [heroCoordinates.x + 2, heroCoordinates.y + 1]);
+    if (heroStats.facing == 'heroDown')
+        return (destination = [heroStats.x + 1, heroStats.y + 2]);
+    if (heroStats.facing == 'heroUp')
+        return (destination = [heroStats.x + 1, heroStats.y]);
+    if (heroStats.facing == 'heroLeft')
+        return (destination = [heroStats.x, heroStats.y + 1]);
+    if (heroStats.facing == 'heroRight')
+        return (destination = [heroStats.x + 2, heroStats.y + 1]);
 }
 function renderHero() {
-    if (heroCoordinates.x < 0) {
-        heroCoordinates.x = 0;
+    if (heroStats.x < 0) {
+        heroStats.x = 0;
     }
-    if (heroCoordinates.y < 0) {
-        heroCoordinates.y = 0;
+    if (heroStats.y < 0) {
+        heroStats.y = 0;
     }
-    if (heroCoordinates.x > 9) {
-        heroCoordinates.x = 9;
+    if (heroStats.x > 9) {
+        heroStats.x = 9;
     }
-    if (heroCoordinates.y > 9) {
-        heroCoordinates.y = 9;
+    if (heroStats.y > 9) {
+        heroStats.y = 9;
     }
-    ctx.drawImage(eval(heroCoordinates.facing), heroCoordinates.x * tileWidth, heroCoordinates.y * tileWidth, tileWidth, tileWidth);
+    ctx.drawImage(eval(heroStats.facing), heroStats.x * tileWidth, heroStats.y * tileWidth, tileWidth, tileWidth);
 }
 function clearCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
-/*
-let bossMonster : Monster = new Monster ('boss',5,4);
-let skeleton1 : Monster = new Monster ('skeleton',10,4);
-let skeleton2 : Monster = new Monster ('skeleton',10,8);
-let skeleton3 : Monster = new Monster ('skeleton',5,7);
-*/
-function updateGameState() {
-    clearCanvas();
-    renderFloor();
-    renderWalls();
-    renderHero();
-    // renderMonster(skeleton1.type);
-    renderSkeleton();
-    printstats();
-    bossMonsterFromClass.spawn();
-}
 updateGameState();
-document.addEventListener("keydown", function (keyHit) {
+document.addEventListener('keydown', function (keyHit) {
     switch (keyHit.key) {
-        case "ArrowDown":
-            heroCoordinates.facing = "heroDown";
+        case 'ArrowDown':
+            heroStats.facing = 'heroDown';
             if (checkIfMoveAllowed()) {
-                heroCoordinates.y++;
+                heroStats.y++;
             }
             updateGameState();
             break;
-        case "ArrowUp":
-            heroCoordinates.facing = "heroUp";
+        case 'ArrowUp':
+            heroStats.facing = 'heroUp';
             if (checkIfMoveAllowed()) {
-                heroCoordinates.y--;
+                heroStats.y--;
             }
             updateGameState();
             break;
-        case "ArrowLeft":
-            heroCoordinates.facing = "heroLeft";
+        case 'ArrowLeft':
+            heroStats.facing = 'heroLeft';
             if (checkIfMoveAllowed()) {
-                heroCoordinates.x--;
+                heroStats.x--;
             }
             updateGameState();
             break;
-        case "ArrowRight":
-            heroCoordinates.facing = "heroRight";
+        case 'ArrowRight':
+            heroStats.facing = 'heroRight';
             if (checkIfMoveAllowed()) {
-                heroCoordinates.x++;
+                heroStats.x++;
             }
             updateGameState();
             break;

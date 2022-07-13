@@ -1,19 +1,19 @@
 "use strict";
 exports.__esModule = true;
-exports.renderFloor2 = void 0;
+exports.renderFloor = void 0;
 var canvas = document.querySelector(".main-canvas");
 var ctx = canvas.getContext("2d");
-//let destination: number[] = [];
+var destination = [];
 var floor = document.getElementById("floor");
 /*import {wallPositionList, skeleton,heroDown,heroLeft,heroRight,heroUp,bossMonster,skeleton1,skeleton2,skeleton3,floor,wall,boss,heroCoordinates,canvas,ctx} from './variables'*/
-function renderFloor2() {
+function renderFloor() {
     for (var i = 0; i < 10; i++) {
         for (var j = 0; j < 10; j++) {
             ctx.drawImage(floor, i * 65, j * 65, 65, 65);
         }
     }
 }
-exports.renderFloor2 = renderFloor2;
+exports.renderFloor = renderFloor;
 /*
 
 export function renderWalls() {
