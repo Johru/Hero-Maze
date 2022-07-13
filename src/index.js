@@ -38,7 +38,7 @@ var Monster = /** @class */ (function () {
     }
     return Monster;
 }());
-var bossMonster = new Monster(10, 10, 'boss', d6(3), d6(1), d6(1) + 1);
+var bossMonster = new Monster(10, 10, 'boss', d6(10), d6(1), d6(1) + 1);
 var skeleton1 = new Monster(5, 9, 'skeleton', d6(2), Math.floor(d6(1) / 2), d6(1));
 var skeleton2 = new Monster(5, 4, 'skeleton', d6(2), Math.floor(d6(1) / 2), d6(1));
 var skeleton3 = new Monster(10, 1, 'skeleton', d6(2), Math.floor(d6(1) / 2), d6(1));
@@ -96,11 +96,19 @@ function updateGameState() {
     renderHero();
     printstats();
     for (var i = 0; i < monsterList.length; i++) {
-        renderBoss(monsterList[i]);
+        renderMonster(monsterList[i]);
+    }
+    checkIfHeroDead();
+}
+function checkIfHeroDead() {
+    if (heroStats.currentHP < 1) {
+        window.location.reload();
     }
 }
-function renderBoss(type) {
-    ctx.drawImage(eval(type.image), (type.x - 1) * tileWidth, (type.y - 1) * tileWidth, tileWidth, tileWidth);
+function renderMonster(type) {
+    if (type.alive) {
+        ctx.drawImage(eval(type.image), (type.x - 1) * tileWidth, (type.y - 1) * tileWidth, tileWidth, tileWidth);
+    }
 }
 function renderFloor() {
     for (var i = 0; i < 10; i++) {
@@ -127,10 +135,13 @@ function printstats() {
     ctx.fillText("SP:    ".concat(heroStats.SP), 660, 125);
     if (bossMonster.alive) {
         ctx.fillText("Boss is still alive!", 660, 175);
-        ctx.fillText("HP:     ".concat(bossMonster.HP), 660, 200);
-        ctx.fillText("DP:     ".concat(bossMonster.DP), 660, 225);
-        ctx.fillText("SP:     ".concat(bossMonster.SP), 660, 250);
     }
+    else {
+        ctx.fillText("Boss is dead. Congrats.", 660, 175);
+    }
+    ctx.fillText("HP:     ".concat(bossMonster.HP), 660, 200);
+    ctx.fillText("DP:     ".concat(bossMonster.DP), 660, 225);
+    ctx.fillText("SP:     ".concat(bossMonster.SP), 660, 250);
 }
 function checkIfMoveAllowed() {
     makeDestination();
@@ -142,9 +153,28 @@ function checkIfMoveAllowed() {
     }
     return true;
 }
+function battle(monster) {
+    while (monster.HP > 0) {
+        if (heroStats.currentHP < 1) {
+            return alert('You died!');
+        }
+        var heroAttack = heroStats.SP + d6(1);
+        var monsterAttack = monster.SP + d6(1);
+        if (heroAttack > monster.DP) {
+            monster.HP -= heroAttack - monster.DP;
+        }
+        if (monsterAttack > heroStats.DP) {
+            heroStats.currentHP -= monsterAttack - heroStats.DP;
+        }
+    }
+    monster.alive = false;
+}
 function checkIfBattle() {
-    if (destination[0] == bossMonster.x && destination[1] == bossMonster.y) {
-        console.log('Fight!');
+    for (var _i = 0, monsterList_1 = monsterList; _i < monsterList_1.length; _i++) {
+        var monster = monsterList_1[_i];
+        if (destination[0] == monster.x && destination[1] == monster.y) {
+            battle(monster);
+        }
     }
 }
 function makeDestination() {

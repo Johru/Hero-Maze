@@ -16,35 +16,63 @@ let heroStats = {
   y: 0,
   facing: 'heroDown',
   level: 1,
-  maxHP: d6(3)+20,
+  maxHP: d6(3) + 20,
   currentHP: 6,
   DP: d6(2),
-  SP: d6(1)+7
+  SP: d6(1) + 7,
 };
-heroStats.currentHP=heroStats.maxHP
+heroStats.currentHP = heroStats.maxHP;
 class Monster {
   x: number;
   y: number;
   image: string;
-  HP:number;
-  DP:number;
-  SP:number;
+  HP: number;
+  DP: number;
+  SP: number;
   alive: boolean;
-  constructor(x: number, y: number, image: string,hp:number, DP:number,
-    SP:number,alive: boolean = true) {
+  constructor(
+    x: number,
+    y: number,
+    image: string,
+    hp: number,
+    DP: number,
+    SP: number,
+    alive: boolean = true
+  ) {
     this.x = x;
     this.y = y;
     this.image = image;
-    this.HP = hp
+    this.HP = hp;
     this.DP = DP;
     this.SP = SP;
     this.alive = alive;
   }
 }
-let bossMonster: Monster = new Monster(10, 10, 'boss', d6(3),d6(1),d6(1)+1);
-let skeleton1: Monster = new Monster(5, 9 ,'skeleton', d6(2),Math.floor(d6(1)/2),d6(1));
-let skeleton2: Monster = new Monster(5, 4, 'skeleton', d6(2),Math.floor(d6(1)/2),d6(1));
-let skeleton3: Monster = new Monster(10, 1 ,'skeleton', d6(2),Math.floor(d6(1)/2),d6(1));
+let bossMonster: Monster = new Monster(10, 10, 'boss', d6(10), d6(1), d6(1) + 1);
+let skeleton1: Monster = new Monster(
+  5,
+  9,
+  'skeleton',
+  d6(2),
+  Math.floor(d6(1) / 2),
+  d6(1)
+);
+let skeleton2: Monster = new Monster(
+  5,
+  4,
+  'skeleton',
+  d6(2),
+  Math.floor(d6(1) / 2),
+  d6(1)
+);
+let skeleton3: Monster = new Monster(
+  10,
+  1,
+  'skeleton',
+  d6(2),
+  Math.floor(d6(1) / 2),
+  d6(1)
+);
 let monsterList: Monster[] = [];
 monsterList.push(bossMonster);
 monsterList.push(skeleton1);
@@ -90,20 +118,28 @@ let wallPositionList: number[][] = [
   [9, 8],
   [9, 9],
 ];
-function d6(numberOfRolls:number){
-  return numberOfRolls*(Math.floor(Math.random() * 6)+1)
+function d6(numberOfRolls: number) {
+  return numberOfRolls * (Math.floor(Math.random() * 6) + 1);
 }
 function updateGameState() {
   clearCanvas();
   renderFloor();
   renderWalls();
-   renderHero();
+  renderHero();
   printstats();
-  for (let i=0;i<monsterList.length;i++){
-    renderBoss(monsterList[i]);
+  for (let i = 0; i < monsterList.length; i++) {
+    renderMonster(monsterList[i]);
+  }
+  checkIfHeroDead ();
 }
+
+function checkIfHeroDead (){
+  if (heroStats.currentHP<1){
+  window.location.reload();
+  }
 }
-function renderBoss(type: Monster) {
+function renderMonster(type: Monster) {
+  if (type.alive){
   ctx.drawImage(
     eval(type.image),
     (type.x - 1) * tileWidth,
@@ -111,6 +147,7 @@ function renderBoss(type: Monster) {
     tileWidth,
     tileWidth
   );
+  }
 }
 
 export function renderFloor() {
@@ -142,18 +179,21 @@ function printstats() {
   ctx.fillText(`HP:    ${heroStats.currentHP}/${heroStats.maxHP}`, 660, 75);
   ctx.fillText(`DP:    ${heroStats.DP}`, 660, 100);
   ctx.fillText(`SP:    ${heroStats.SP}`, 660, 125);
-  if (bossMonster.alive){
-  ctx.fillText(`Boss is still alive!`, 660, 175);
-  ctx.fillText(`HP:     ${bossMonster.HP}`, 660, 200);
-  ctx.fillText(`DP:     ${bossMonster.DP}`, 660, 225);
-  ctx.fillText(`SP:     ${bossMonster.SP}`, 660, 250);
+  if (bossMonster.alive) {
+    ctx.fillText(`Boss is still alive!`, 660, 175);
+  }else{
+    ctx.fillText(`Boss is dead. Congrats.`, 660, 175);
   }
+    ctx.fillText(`HP:     ${bossMonster.HP}`, 660, 200);
+    ctx.fillText(`DP:     ${bossMonster.DP}`, 660, 225);
+    ctx.fillText(`SP:     ${bossMonster.SP}`, 660, 250);
+  
 }
 function checkIfMoveAllowed() {
   makeDestination();
   checkIfBattle();
   for (let i = 0; i < wallPositionList.length; i++) {
-        if (
+    if (
       destination[0] == wallPositionList[i][0] &&
       destination[1] == wallPositionList[i][1]
     )
@@ -161,10 +201,25 @@ function checkIfMoveAllowed() {
   }
   return true;
 }
-function checkIfBattle(){
-  
-  if (destination[0]==bossMonster.x&&destination[1]==bossMonster.y){
-    console.log('Fight!');
+function battle(monster: Monster) {
+  while (monster.HP > 0) {
+    if (heroStats.currentHP<1){return alert ('You died!')}
+    let heroAttack:number=heroStats.SP + d6(1);
+    let monsterAttack:number=monster.SP + d6(1);
+    if (heroAttack > monster.DP) {
+      monster.HP -= heroAttack - monster.DP;
+    }
+    if (monsterAttack > heroStats.DP) {
+      heroStats.currentHP -=monsterAttack - heroStats.DP;
+    }
+  }
+  monster.alive=false;
+}
+function checkIfBattle() {
+  for (let monster of monsterList) {
+    if (destination[0] == monster.x && destination[1] == monster.y) {
+      battle(monster);
+    }
   }
 }
 function makeDestination() {
