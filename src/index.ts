@@ -1,3 +1,5 @@
+import { inherits } from 'util';
+
 //import {renderFloor} from './functions'
 let destination: number[] = [];
 const canvas = document.querySelector('.main-canvas') as HTMLCanvasElement;
@@ -11,7 +13,7 @@ let floor = document.getElementById('floor') as HTMLImageElement;
 let wall = document.getElementById('wall') as HTMLImageElement;
 let boss = document.getElementById('boss') as HTMLImageElement;
 let tileWidth: number = 65;
-let monsterLevel:number=1;
+let monsterLevel: number = 1;
 let heroStats = {
   x: 0,
   y: 0,
@@ -22,8 +24,14 @@ let heroStats = {
   DP: d6(2),
   SP: d6(1) + 7,
 };
+let skeletonSetup = {
+  1: [5, 4],
+  2: [10, 1],
+  3: [5, 8],
+};
 heroStats.currentHP = heroStats.maxHP;
 class Monster {
+  orderNumber: number;
   x: number;
   y: number;
   image: string;
@@ -32,14 +40,16 @@ class Monster {
   SP: number;
   alive: boolean;
   constructor(
-    x: number,
-    y: number,
-    image: string,
-    hp: number,
-    DP: number,
-    SP: number,
+    order: number,
+    x: number = 0,
+    y: number = 0,
+    image: string = 'boss',
+    hp: number = 0,
+    DP: number = 0,
+    SP: number = 0,
     alive: boolean = true
   ) {
+    this.orderNumber = order;
     this.x = x;
     this.y = y;
     this.image = image;
@@ -48,38 +58,38 @@ class Monster {
     this.SP = SP;
     this.alive = alive;
   }
+  init() {
+    this.x = 10;
+    this.y = 10;
+    this.alive = true;
+    this.HP = d6(8) + 2 * monsterLevel * d6(1);
+    this.DP = Math.floor((monsterLevel / 2) * d6(1));
+    this.SP = monsterLevel * d6(1) + 3 * monsterLevel;
+  }
 }
-let bossMonster: Monster = new Monster(10, 10, 'boss', d6(8)+2*monsterLevel*d6(1), Math.floor(monsterLevel/2*d6(1))+10,monsterLevel* d6(1) + monsterLevel);
-let skeleton1: Monster = new Monster(
-  5,
-  9,
-  'skeleton',
-  d6(2)*2*monsterLevel,
-  Math.floor((d6(1) / 2)+monsterLevel/2),
-  monsterLevel*d6(1)
-);
-let skeleton2: Monster = new Monster(
-  5,
-  4,
-  'skeleton',
-  d6(2),
-  Math.floor((d6(1) / 2)+monsterLevel/2),
-  monsterLevel*d6(1)
-);
-let skeleton3: Monster = new Monster(
-  10,
-  1,
-  'skeleton',
-  monsterLevel*d6(2)+monsterLevel,
-  Math.floor((d6(1) / 2)+monsterLevel/2),
-  monsterLevel*d6(1)
-);
+class Skeleton extends Monster {
+  init() {
+    this.x = skeletonSetup[this.orderNumber][0];
+    this.y = skeletonSetup[this.orderNumber][1];
+    this.alive = true;
+    this.HP = d6(2) * 2 * monsterLevel;
+    this.DP = Math.floor((monsterLevel * d6(1)) / 2 + monsterLevel / 2);
+    this.SP = monsterLevel * d6(1) + 3 * monsterLevel;
+    this.image = 'skeleton';
+  }
+}
+let bossMonster: Monster = new Monster(0);
+let skeleton1: Monster = new Skeleton(1);
+let skeleton2: Monster = new Skeleton(2);
+let skeleton3: Monster = new Skeleton(3);
 let monsterList: Monster[] = [];
 monsterList.push(bossMonster);
 monsterList.push(skeleton1);
 monsterList.push(skeleton2);
 monsterList.push(skeleton3);
-
+for (let monster of monsterList) {
+  monster.init();
+}
 let wallPositionList: number[][] = [
   [4, 1],
   [4, 2],
@@ -120,9 +130,11 @@ let wallPositionList: number[][] = [
   [9, 9],
 ];
 function d6(numberOfRolls: number) {
-  let total:number=0;
- for(let i=0;i<numberOfRolls;i++){ total+= (Math.floor(Math.random() * 6) + 1);}
- return total;
+  let total: number = 0;
+  for (let i = 0; i < numberOfRolls; i++) {
+    total += Math.floor(Math.random() * 6) + 1;
+  }
+  return total;
 }
 function updateGameState() {
   clearCanvas();
@@ -133,27 +145,48 @@ function updateGameState() {
   for (let i = 0; i < monsterList.length; i++) {
     renderMonster(monsterList[i]);
   }
-  checkIfHeroDead ();
+  checkIfHeroDead();
   checkRoundEnd();
 }
 
-function checkRoundEnd (){
-
+function checkRoundEnd() {
+  if (bossMonster.alive == false) {
+    heroStats.x = 0;
+    heroStats.y = 0;
+    let hpGainRandomizer = Math.random() * 101;
+    console.log(hpGainRandomizer);
+    if (hpGainRandomizer <= 10) {
+      heroStats.currentHP = heroStats.maxHP;
+      console.log('Full HP restored!');
+    }
+    if (40 >= hpGainRandomizer && hpGainRandomizer > 10) {
+      heroStats.currentHP = heroStats.currentHP+Math.floor(heroStats.maxHP / 3);
+      console.log('A third of HP restored!');
+    }
+    if (hpGainRandomizer > 40) {
+      heroStats.currentHP =heroStats.currentHP+ Math.floor(heroStats.maxHP / 10);
+      console.log('A tenth of HP restored!');
+    }
+    monsterLevel++;
+    for (let monster of monsterList) {
+      monster.init();
+    }
+  }
 }
-function checkIfHeroDead (){
-  if (heroStats.currentHP<1){
-  window.location.reload();
+function checkIfHeroDead() {
+  if (heroStats.currentHP < 1) {
+    window.location.reload();
   }
 }
 function renderMonster(type: Monster) {
-  if (type.alive){
-  ctx.drawImage(
-    eval(type.image),
-    (type.x - 1) * tileWidth,
-    (type.y - 1) * tileWidth,
-    tileWidth,
-    tileWidth
-  );
+  if (type.alive) {
+    ctx.drawImage(
+      eval(type.image),
+      (type.x - 1) * tileWidth,
+      (type.y - 1) * tileWidth,
+      tileWidth,
+      tileWidth
+    );
   }
 }
 
@@ -183,19 +216,23 @@ function printstats() {
   ctx.font = '20px Arial';
   ctx.fillText('Stats:', 660, 25);
   ctx.fillText(`Hero Level: ${heroStats.level}`, 660, 50);
-  ctx.fillText(`HP:         ${heroStats.currentHP}/${heroStats.maxHP}`, 660, 75);
+  ctx.fillText(
+    `HP:         ${heroStats.currentHP}/${heroStats.maxHP}`,
+    660,
+    75
+  );
   ctx.fillText(`DP:         ${heroStats.DP}`, 660, 100);
   ctx.fillText(`SP:         ${heroStats.SP}`, 660, 125);
   ctx.fillText(`Monster Level:${monsterLevel}`, 660, 175);
   if (bossMonster.alive) {
     ctx.fillText(`Boss is still alive!`, 660, 200);
-  }else{
+  } else {
     ctx.fillText(`Boss is dead. Congrats.`, 660, 200);
   }
-    ctx.fillText(`HP:       ${bossMonster.HP}`, 660, 225);
-    ctx.fillText(`DP:       ${bossMonster.DP}`, 660, 250);
-    ctx.fillText(`SP:       ${bossMonster.SP}`, 660, 275);
-  
+  ctx.fillText(`HP:       ${bossMonster.HP}`, 660, 225);
+  ctx.fillText(`DP:       ${bossMonster.DP}`, 660, 250);
+  ctx.fillText(`SP:       ${bossMonster.SP}`, 660, 275);
+  ctx.fillText(`You havent found the key yet.`, 660, 300);
 }
 function checkIfMoveAllowed() {
   makeDestination();
@@ -211,27 +248,33 @@ function checkIfMoveAllowed() {
 }
 function battle(monster: Monster) {
   while (monster.HP > 0) {
-    if (heroStats.currentHP<1){return alert ('You died!')}
-    let heroAttack:number=heroStats.SP + d6(1);
-    let monsterAttack:number=monster.SP + d6(1);
+    if (heroStats.currentHP < 1) {
+      return alert('You died!');
+    }
+    let heroAttack: number = heroStats.SP + d6(1);
+    let monsterAttack: number = monster.SP + d6(1);
     if (heroAttack > monster.DP) {
       monster.HP -= heroAttack - monster.DP;
     }
     if (monsterAttack > heroStats.DP) {
-      heroStats.currentHP -=monsterAttack - heroStats.DP;
+      heroStats.currentHP -= monsterAttack - heroStats.DP;
     }
   }
-  monster.alive=false;
-  let hpBoost:number=d6(1);
-  heroStats.maxHP+=hpBoost;
-  heroStats.currentHP+=hpBoost;
-  heroStats.DP+=d6(1);
-  heroStats.SP+=d6(1);
+  monster.alive = false;
+  let hpBoost: number = d6(1);
+  heroStats.maxHP += hpBoost;
+  heroStats.currentHP += hpBoost;
+  heroStats.DP += 1;
+  heroStats.SP += 1;
   heroStats.level++;
 }
 function checkIfBattle() {
   for (let monster of monsterList) {
-    if (destination[0] == monster.x && destination[1] == monster.y && monster.alive) {
+    if (
+      destination[0] == monster.x &&
+      destination[1] == monster.y &&
+      monster.alive
+    ) {
       battle(monster);
     }
   }

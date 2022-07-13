@@ -1,4 +1,19 @@
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 exports.__esModule = true;
 exports.renderFloor = void 0;
 //import {renderFloor} from './functions'
@@ -25,10 +40,22 @@ var heroStats = {
     DP: d6(2),
     SP: d6(1) + 7
 };
+var skeletonSetup = {
+    1: [5, 4],
+    2: [10, 1],
+    3: [5, 8]
+};
 heroStats.currentHP = heroStats.maxHP;
 var Monster = /** @class */ (function () {
-    function Monster(x, y, image, hp, DP, SP, alive) {
+    function Monster(order, x, y, image, hp, DP, SP, alive) {
+        if (x === void 0) { x = 0; }
+        if (y === void 0) { y = 0; }
+        if (image === void 0) { image = 'boss'; }
+        if (hp === void 0) { hp = 0; }
+        if (DP === void 0) { DP = 0; }
+        if (SP === void 0) { SP = 0; }
         if (alive === void 0) { alive = true; }
+        this.orderNumber = order;
         this.x = x;
         this.y = y;
         this.image = image;
@@ -37,17 +64,45 @@ var Monster = /** @class */ (function () {
         this.SP = SP;
         this.alive = alive;
     }
+    Monster.prototype.init = function () {
+        this.x = 10;
+        this.y = 10;
+        this.alive = true;
+        this.HP = d6(8) + 2 * monsterLevel * d6(1);
+        this.DP = Math.floor((monsterLevel / 2) * d6(1));
+        this.SP = monsterLevel * d6(1) + 3 * monsterLevel;
+    };
     return Monster;
 }());
-var bossMonster = new Monster(10, 10, 'boss', d6(8) + 2 * monsterLevel * d6(1), Math.floor(monsterLevel / 2 * d6(1)) + 10, monsterLevel * d6(1) + monsterLevel);
-var skeleton1 = new Monster(5, 9, 'skeleton', d6(2) * 2 * monsterLevel, Math.floor((d6(1) / 2) + monsterLevel / 2), monsterLevel * d6(1));
-var skeleton2 = new Monster(5, 4, 'skeleton', d6(2), Math.floor((d6(1) / 2) + monsterLevel / 2), monsterLevel * d6(1));
-var skeleton3 = new Monster(10, 1, 'skeleton', monsterLevel * d6(2) + monsterLevel, Math.floor((d6(1) / 2) + monsterLevel / 2), monsterLevel * d6(1));
+var Skeleton = /** @class */ (function (_super) {
+    __extends(Skeleton, _super);
+    function Skeleton() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    Skeleton.prototype.init = function () {
+        this.x = skeletonSetup[this.orderNumber][0];
+        this.y = skeletonSetup[this.orderNumber][1];
+        this.alive = true;
+        this.HP = d6(2) * 2 * monsterLevel;
+        this.DP = Math.floor((monsterLevel * d6(1)) / 2 + monsterLevel / 2);
+        this.SP = monsterLevel * d6(1) + 3 * monsterLevel;
+        this.image = 'skeleton';
+    };
+    return Skeleton;
+}(Monster));
+var bossMonster = new Monster(0);
+var skeleton1 = new Skeleton(1);
+var skeleton2 = new Skeleton(2);
+var skeleton3 = new Skeleton(3);
 var monsterList = [];
 monsterList.push(bossMonster);
 monsterList.push(skeleton1);
 monsterList.push(skeleton2);
 monsterList.push(skeleton3);
+for (var _i = 0, monsterList_1 = monsterList; _i < monsterList_1.length; _i++) {
+    var monster = monsterList_1[_i];
+    monster.init();
+}
 var wallPositionList = [
     [4, 1],
     [4, 2],
@@ -90,7 +145,7 @@ var wallPositionList = [
 function d6(numberOfRolls) {
     var total = 0;
     for (var i = 0; i < numberOfRolls; i++) {
-        total += (Math.floor(Math.random() * 6) + 1);
+        total += Math.floor(Math.random() * 6) + 1;
     }
     return total;
 }
@@ -104,6 +159,32 @@ function updateGameState() {
         renderMonster(monsterList[i]);
     }
     checkIfHeroDead();
+    checkRoundEnd();
+}
+function checkRoundEnd() {
+    if (bossMonster.alive == false) {
+        heroStats.x = 0;
+        heroStats.y = 0;
+        var hpGainRandomizer = Math.random() * 101;
+        console.log(hpGainRandomizer);
+        if (hpGainRandomizer <= 10) {
+            heroStats.currentHP = heroStats.maxHP;
+            console.log('Full HP restored!');
+        }
+        if (40 >= hpGainRandomizer && hpGainRandomizer > 10) {
+            heroStats.currentHP = heroStats.currentHP + Math.floor(heroStats.maxHP / 3);
+            console.log('A third of HP restored!');
+        }
+        if (hpGainRandomizer > 40) {
+            heroStats.currentHP = heroStats.currentHP + Math.floor(heroStats.maxHP / 10);
+            console.log('A tenth of HP restored!');
+        }
+        monsterLevel++;
+        for (var _i = 0, monsterList_2 = monsterList; _i < monsterList_2.length; _i++) {
+            var monster = monsterList_2[_i];
+            monster.init();
+        }
+    }
 }
 function checkIfHeroDead() {
     if (heroStats.currentHP < 1) {
@@ -148,6 +229,7 @@ function printstats() {
     ctx.fillText("HP:       ".concat(bossMonster.HP), 660, 225);
     ctx.fillText("DP:       ".concat(bossMonster.DP), 660, 250);
     ctx.fillText("SP:       ".concat(bossMonster.SP), 660, 275);
+    ctx.fillText("You havent found the key yet.", 660, 300);
 }
 function checkIfMoveAllowed() {
     makeDestination();
@@ -177,14 +259,16 @@ function battle(monster) {
     var hpBoost = d6(1);
     heroStats.maxHP += hpBoost;
     heroStats.currentHP += hpBoost;
-    heroStats.DP += d6(1);
-    heroStats.SP += d6(1);
+    heroStats.DP += 1;
+    heroStats.SP += 1;
     heroStats.level++;
 }
 function checkIfBattle() {
-    for (var _i = 0, monsterList_1 = monsterList; _i < monsterList_1.length; _i++) {
-        var monster = monsterList_1[_i];
-        if (destination[0] == monster.x && destination[1] == monster.y && monster.alive) {
+    for (var _i = 0, monsterList_3 = monsterList; _i < monsterList_3.length; _i++) {
+        var monster = monsterList_3[_i];
+        if (destination[0] == monster.x &&
+            destination[1] == monster.y &&
+            monster.alive) {
             battle(monster);
         }
     }
