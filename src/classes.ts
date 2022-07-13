@@ -9,3 +9,4 @@ export class Monster {
     this.y=y;
   }
 }
+

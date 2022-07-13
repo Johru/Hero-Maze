@@ -19,19 +19,6 @@ export let heroCoordinates = {
   facing:'heroDown'
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 export let wallPositionList: number[][] = [
   [4, 1],
   [4, 2],
