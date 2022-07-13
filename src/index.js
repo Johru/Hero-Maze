@@ -14,6 +14,7 @@ var floor = document.getElementById('floor');
 var wall = document.getElementById('wall');
 var boss = document.getElementById('boss');
 var tileWidth = 65;
+var monsterLevel = 1;
 var heroStats = {
     x: 0,
     y: 0,
@@ -38,10 +39,10 @@ var Monster = /** @class */ (function () {
     }
     return Monster;
 }());
-var bossMonster = new Monster(10, 10, 'boss', d6(10), d6(1), d6(1) + 1);
-var skeleton1 = new Monster(5, 9, 'skeleton', d6(2), Math.floor(d6(1) / 2), d6(1));
-var skeleton2 = new Monster(5, 4, 'skeleton', d6(2), Math.floor(d6(1) / 2), d6(1));
-var skeleton3 = new Monster(10, 1, 'skeleton', d6(2), Math.floor(d6(1) / 2), d6(1));
+var bossMonster = new Monster(10, 10, 'boss', d6(8) + 2 * monsterLevel * d6(1), Math.floor(monsterLevel / 2 * d6(1)) + 10, monsterLevel * d6(1) + monsterLevel);
+var skeleton1 = new Monster(5, 9, 'skeleton', d6(2) * 2 * monsterLevel, Math.floor((d6(1) / 2) + monsterLevel / 2), monsterLevel * d6(1));
+var skeleton2 = new Monster(5, 4, 'skeleton', d6(2), Math.floor((d6(1) / 2) + monsterLevel / 2), monsterLevel * d6(1));
+var skeleton3 = new Monster(10, 1, 'skeleton', monsterLevel * d6(2) + monsterLevel, Math.floor((d6(1) / 2) + monsterLevel / 2), monsterLevel * d6(1));
 var monsterList = [];
 monsterList.push(bossMonster);
 monsterList.push(skeleton1);
@@ -87,7 +88,11 @@ var wallPositionList = [
     [9, 9],
 ];
 function d6(numberOfRolls) {
-    return numberOfRolls * (Math.floor(Math.random() * 6) + 1);
+    var total = 0;
+    for (var i = 0; i < numberOfRolls; i++) {
+        total += (Math.floor(Math.random() * 6) + 1);
+    }
+    return total;
 }
 function updateGameState() {
     clearCanvas();
@@ -129,19 +134,20 @@ function renderWallTile(xPosition, yPosition) {
 function printstats() {
     ctx.font = '20px Arial';
     ctx.fillText('Stats:', 660, 25);
-    ctx.fillText("Level: ".concat(heroStats.level), 660, 50);
-    ctx.fillText("HP:    ".concat(heroStats.currentHP, "/").concat(heroStats.maxHP), 660, 75);
-    ctx.fillText("DP:    ".concat(heroStats.DP), 660, 100);
-    ctx.fillText("SP:    ".concat(heroStats.SP), 660, 125);
+    ctx.fillText("Hero Level: ".concat(heroStats.level), 660, 50);
+    ctx.fillText("HP:         ".concat(heroStats.currentHP, "/").concat(heroStats.maxHP), 660, 75);
+    ctx.fillText("DP:         ".concat(heroStats.DP), 660, 100);
+    ctx.fillText("SP:         ".concat(heroStats.SP), 660, 125);
+    ctx.fillText("Monster Level:".concat(monsterLevel), 660, 175);
     if (bossMonster.alive) {
-        ctx.fillText("Boss is still alive!", 660, 175);
+        ctx.fillText("Boss is still alive!", 660, 200);
     }
     else {
-        ctx.fillText("Boss is dead. Congrats.", 660, 175);
+        ctx.fillText("Boss is dead. Congrats.", 660, 200);
     }
-    ctx.fillText("HP:     ".concat(bossMonster.HP), 660, 200);
-    ctx.fillText("DP:     ".concat(bossMonster.DP), 660, 225);
-    ctx.fillText("SP:     ".concat(bossMonster.SP), 660, 250);
+    ctx.fillText("HP:       ".concat(bossMonster.HP), 660, 225);
+    ctx.fillText("DP:       ".concat(bossMonster.DP), 660, 250);
+    ctx.fillText("SP:       ".concat(bossMonster.SP), 660, 275);
 }
 function checkIfMoveAllowed() {
     makeDestination();
@@ -168,11 +174,17 @@ function battle(monster) {
         }
     }
     monster.alive = false;
+    var hpBoost = d6(1);
+    heroStats.maxHP += hpBoost;
+    heroStats.currentHP += hpBoost;
+    heroStats.DP += d6(1);
+    heroStats.SP += d6(1);
+    heroStats.level++;
 }
 function checkIfBattle() {
     for (var _i = 0, monsterList_1 = monsterList; _i < monsterList_1.length; _i++) {
         var monster = monsterList_1[_i];
-        if (destination[0] == monster.x && destination[1] == monster.y) {
+        if (destination[0] == monster.x && destination[1] == monster.y && monster.alive) {
             battle(monster);
         }
     }
