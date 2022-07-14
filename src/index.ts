@@ -1,23 +1,23 @@
-import { inherits } from 'util';
-
-//import {renderFloor} from './functions'
-let destination: number[] = [];
-const canvas = document.querySelector('.main-canvas') as HTMLCanvasElement;
-const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-let skeleton = document.getElementById('skeleton') as HTMLImageElement;
-let heroUp = document.getElementById('hero-up') as HTMLImageElement;
-let heroDown = document.getElementById('hero-down') as HTMLImageElement;
-let heroLeft = document.getElementById('hero-left') as HTMLImageElement;
-let heroRight = document.getElementById('hero-right') as HTMLImageElement;
-let floor = document.getElementById('floor') as HTMLImageElement;
-let wall = document.getElementById('wall') as HTMLImageElement;
-let boss = document.getElementById('boss') as HTMLImageElement;
-let blood = document.getElementById('blood') as HTMLImageElement;
-let tileWidth: number = 65;
-let monsterLevel: number = 1;
-let monsterHasKey: number = 1;
-let monstersMove: boolean = false;
-let heroStats = {
+import { renderFloor } from './map-render';
+import {
+  skeletonSetup,
+  wallPositionList,
+  ctx,
+  tileWidth,
+  blood,
+  wall,
+  key,
+  heroDown,
+  heroLeft,
+  heroRight,
+  heroUp,
+  skeleton,
+  boss
+} from './variables';
+export const canvas = document.querySelector(
+  '.main-canvas'
+) as HTMLCanvasElement;
+export let heroStats = {
   x: 0,
   y: 0,
   facing: 'heroDown',
@@ -28,13 +28,15 @@ let heroStats = {
   SP: d6(1) + 7,
   hasKey: false,
 };
-let skeletonSetup = {
-  1: [8, 6],
-  2: [5, 4],
-  3: [5, 9],
-};
+//import {renderFloor} from './functions'
+let destination: number[] = [];
 heroStats.currentHP = heroStats.maxHP;
-class Monster {
+let monstersMove: boolean = false;
+let monsterHasKey: number = 1;
+
+export let monsterLevel: number = 1;
+
+export class Monster {
   orderNumber: number;
   x: number;
   y: number;
@@ -63,7 +65,7 @@ class Monster {
     this.SP = SP;
     this.alive = alive;
   }
-  init() {
+  init(): void {
     this.x = 10;
     this.y = 10;
     this.alive = true;
@@ -74,8 +76,8 @@ class Monster {
 }
 class Skeleton extends Monster {
   init() {
-    this.x = skeletonSetup[this.orderNumber][0];
-    this.y = skeletonSetup[this.orderNumber][1];
+    this.x = skeletonSetup[this.orderNumber - 1][0];
+    this.y = skeletonSetup[this.orderNumber - 1][1];
     this.alive = true;
     this.HP = d6(2) * 2 * monsterLevel;
     this.DP = Math.floor((monsterLevel * d6(1)) / 2 + monsterLevel / 2);
@@ -95,47 +97,8 @@ monsterList.push(skeleton3);
 for (let monster of monsterList) {
   monster.init();
 }
-
 assignKey();
-let wallPositionList: number[][] = [
-  [4, 1],
-  [4, 2],
-  [4, 3],
-  [3, 3],
-  [2, 3],
-  [1, 5],
-  [2, 5],
-  [3, 5],
-  [4, 5],
-  [2, 6],
-  [2, 7],
-  [4, 6],
-  [4, 7],
-  [6, 2],
-  [6, 3],
-  [6, 4],
-  [6, 5],
-  [7, 5],
-  [8, 5],
-  [9, 5],
-  [8, 2],
-  [9, 2],
-  [8, 3],
-  [9, 3],
-  [6, 7],
-  [6, 8],
-  [7, 7],
-  [7, 8],
-  [4, 10],
-  [2, 9],
-  [3, 9],
-  [4, 9],
-  [6, 10],
-  [7, 10],
-  [9, 7],
-  [9, 8],
-  [9, 9],
-];
+updateGameState();
 
 for (let j = 1; j < 11; j++) {
   wallPositionList.push([j, 11]);
@@ -149,15 +112,16 @@ for (let k = 1; k < 11; k++) {
 for (let k = 1; k < 11; k++) {
   wallPositionList.push([11, k]);
 }
-function d6(numberOfRolls: number) {
+export function d6(numberOfRolls: number): number {
   let total: number = 0;
   for (let i = 0; i < numberOfRolls; i++) {
     total += Math.floor(Math.random() * 6) + 1;
   }
   return total;
 }
-function updateGameState() {
 
+
+function updateGameState() {
   clearCanvas();
   renderFloor();
   renderWalls();
@@ -204,6 +168,9 @@ function checkRoundEnd() {
         heroStats.currentHP + Math.floor(heroStats.maxHP / 10);
       console.log('A tenth of HP restored!');
     }
+    if (heroStats.currentHP > heroStats.maxHP) {
+      heroStats.currentHP = heroStats.maxHP;
+    }
     monsterLevel++;
 
     for (let monster of monsterList) {
@@ -243,26 +210,31 @@ function attemptToMoveMonster(specimen: Monster) {
   if (monstersMove) {
     let direction: number = 0;
     let hasMoved: boolean = false;
-    let stopIfInfinite:number = 0;
+    let stopIfInfinite: number = 0;
     while (!hasMoved) {
-      if (stopIfInfinite>100)break;
+      if (stopIfInfinite > 100) break;
       direction = Math.floor(Math.random() * 4) + 1;
       monsterDestination(direction, specimen);
 
-      if (checkIfMoveAllowed()&&checkOtherMonsters(specimen)) {
+      if (checkIfMoveAllowed() && checkOtherMonsters(specimen)) {
         specimen.x = destination[0];
         specimen.y = destination[1];
         hasMoved = true;
       }
-      stopIfInfinite++
+      stopIfInfinite++;
     }
   }
 }
 
-function checkOtherMonsters(specimen:Monster){
-  for (let i=0;i<monsterList.length;i++){
-    if (i==specimen.orderNumber) continue;
-    if (monsterList[i].x == destination[0]&&monsterList[i].y == destination[1]){return false}
+function checkOtherMonsters(specimen: Monster) {
+  for (let i = 0; i < monsterList.length; i++) {
+    if (i == specimen.orderNumber) continue;
+    if (
+      monsterList[i].x == destination[0] &&
+      monsterList[i].y == destination[1]
+    ) {
+      return false;
+    }
   }
   return true;
 }
@@ -270,7 +242,7 @@ function renderMonster(specimen: Monster) {
   if (specimen.alive) {
     attemptToMoveMonster(specimen);
     ctx.drawImage(
-      eval(specimen.image),
+      getSpriteByName(specimen.image),
       (specimen.x - 1) * tileWidth,
       (specimen.y - 1) * tileWidth,
       tileWidth,
@@ -286,7 +258,7 @@ function renderMonster(specimen: Monster) {
     );
   }
 }
-
+/*
 export function renderFloor() {
   for (let i = 0; i < 10; i++) {
     for (let j = 0; j < 10; j++) {
@@ -294,7 +266,7 @@ export function renderFloor() {
     }
   }
 }
-
+*/
 function renderWalls() {
   for (let i: number = 0; i < wallPositionList.length - 40; i++) {
     renderWallTile(wallPositionList[i][0] - 1, wallPositionList[i][1] - 1);
@@ -312,6 +284,9 @@ function renderWallTile(xPosition: number, yPosition: number) {
 function printstats() {
   ctx.font = '20px Arial';
   ctx.fillText('Stats:', 660, 25);
+  if (heroStats.hasKey) {
+    ctx.drawImage(key, 860, 25, 125, 52);
+  }
   ctx.fillText(`Hero Level: ${heroStats.level}`, 660, 50);
   ctx.fillText(
     `HP:         ${heroStats.currentHP}/${heroStats.maxHP}`,
@@ -410,7 +385,11 @@ function checkIfBattle() {
 
 function checkIfBattleForMonsters() {
   for (let monster of monsterList) {
-    if (heroStats.x+1 == monster.x && heroStats.y+1 == monster.y && monster.alive) {
+    if (
+      heroStats.x + 1 == monster.x &&
+      heroStats.y + 1 == monster.y &&
+      monster.alive
+    ) {
       battle(monster);
     }
   }
@@ -428,7 +407,7 @@ function makeDestination() {
 }
 function renderHero() {
   ctx.drawImage(
-    eval(heroStats.facing),
+    getSpriteByName(heroStats.facing),
     heroStats.x * tileWidth,
     heroStats.y * tileWidth,
     tileWidth,
@@ -439,8 +418,24 @@ function clearCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-updateGameState();
 
+
+function getSpriteByName(name: string) {
+  switch (name) {
+    case 'heroDown':
+      return heroDown;
+    case 'heroUp':
+      return heroUp;
+    case 'heroLeft':
+      return heroLeft;
+      case 'heroRight':
+        return heroRight;
+        case 'skeleton':
+      return skeleton;
+      case 'boss':
+      return boss;
+  }
+}
 document.addEventListener('keydown', function (keyHit) {
   switch (keyHit.key) {
     case 'ArrowDown':

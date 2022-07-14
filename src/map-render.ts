@@ -1,10 +1,6 @@
-const canvas = document.querySelector(".main-canvas") as HTMLCanvasElement;
-const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-let destination: number[] = [];
-let floor = document.getElementById("floor") as HTMLImageElement;
-/*import {wallPositionList, skeleton,heroDown,heroLeft,heroRight,heroUp,bossMonster,skeleton1,skeleton2,skeleton3,floor,wall,boss,heroCoordinates,canvas,ctx} from './variables'*/
-
-export function renderFloor() {
+import {/*wallPositionList, heroDown,heroLeft,heroRight,heroUp,*/floor,ctx,/*wall,boss,canvas,skeleton*/} from './variables';
+//let destination: number[] = [];
+export function renderFloor():void {
   for (let i = 0; i < 10; i++) {
     for (let j = 0; j < 10; j++) {
       ctx.drawImage(floor, i * 65, j * 65, 65, 65);
