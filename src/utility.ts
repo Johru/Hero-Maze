@@ -49,7 +49,7 @@ export function checkIfMoveAllowed(): boolean {
 export function battle(monster: Monster): void {
   while (monster.HP > 0) {
     if (heroStats.currentHP < 1) {
-      return alert('You died!');
+      return alert('You have died!');
     }
     let heroAttack: number = heroStats.SP + d6(1);
     let monsterAttack: number = monster.SP + d6(1);

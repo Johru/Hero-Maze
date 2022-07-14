@@ -1,3 +1,26 @@
+
+## Developer Notes
+
+See original excercise description below. I am going to add a brief description of structure of the program and a list of changes compared to original excercise.
+
+### Differences
+
+1. Skeletons and boss have different models
+2. Battle is triggered every time a hero moves into a monster's square or vice versa. The game does not wait for user input to resolve battle to avoid hero moving through monsters without a fight.
+3. Monster collision - monsters will not be able to move into a square containing another monster.
+4. When hero gains levels, DP and SP increase is drastically reduced, making higher levels more difficult.
+5. Boss is more powerful in all stats.
+6. Visual feedback: dead monsters leave behind bloodstains. Once the player obtains the key, the picture of a key is shown next to stats.
+7. Description of victory conditions is displayed to the player, current status of boss and key conditon is shown. When player dies, alert 'You have died' is shown.
+
+### Decription
+
+#### Setup
+ 
+ 1. in variables.ts, instances of Monsters are created and pushed to monsterList.
+ 
+
+
 # Full Week Project: Wanderer - The RPG game
 
 Build a hero based walking on tiles and killing monsters type of game. The hero

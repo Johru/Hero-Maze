@@ -3,10 +3,11 @@ import {assignKey} from './monster'
 
 export function setup ():void{
 pushBoundariesToWallList();
-assignKey();
 for (let monster of monsterList) {
   monster.init();
 }
+assignKey();
+
 }
 
 export function pushBoundariesToWallList():void{
