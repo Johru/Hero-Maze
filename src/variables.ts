@@ -1,5 +1,6 @@
 
-import {d6} from './index'
+import {Monster,Skeleton} from './classes'
+import {d6} from './utility'
 export const canvas = document.querySelector('.main-canvas') as HTMLCanvasElement;
 export const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 export let skeleton = document.getElementById('skeleton') as HTMLImageElement;
@@ -12,13 +13,9 @@ export let wall = document.getElementById('wall') as HTMLImageElement;
 export let boss = document.getElementById('boss') as HTMLImageElement;
 export let blood = document.getElementById('blood') as HTMLImageElement;
 export let key = document.getElementById('key') as HTMLImageElement;
-export let tileWidth: number = 65;
-
-
-
 export let heroStats = {
-  x: 0,
-  y: 0,
+  x: 1,
+  y: 1,
   facing: 'heroDown',
   level: 1,
   maxHP: d6(3) + 20,
@@ -27,6 +24,42 @@ export let heroStats = {
   SP: d6(1) + 7,
   hasKey: false,
 };
+export let tileWidth: number = 65;
+export let bossMonster: Monster = new Monster(0);
+export let skeleton1: Monster = new Skeleton(1);
+export let skeleton2: Monster = new Skeleton(2);
+export let skeleton3: Monster = new Skeleton(3);
+export let monsterList: Monster[] = [];
+monsterList.push(bossMonster);
+monsterList.push(skeleton1);
+monsterList.push(skeleton2);
+monsterList.push(skeleton3);
+heroStats.currentHP = heroStats.maxHP;
+
+
+
+export let monstersMove: boolean = false;
+export function updateMonstersMove(doTheyQuestionmark:boolean):boolean{
+  return monstersMove=doTheyQuestionmark;
+  }
+export let monsterHasKey: number = 1;
+export function updateMonsterHasKey(orderNumberOfMonster:number):number{
+  return monsterHasKey=orderNumberOfMonster;
+  }
+export let monsterLevel: number = 1;
+export function updateMonstersLevel(increment:number):number{
+  return monsterLevel+=increment;
+  }
+
+let destination: number[] = [];
+export function updateDestination(x:number,y:number):number[]{
+  return destination=[x,y];
+  }
+export function getDestination():number[]{
+  return destination;
+  }
+
+
 export let skeletonSetup = [
   [8, 6],
   [5, 4],
