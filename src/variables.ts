@@ -13,6 +13,8 @@ export let wall = document.getElementById('wall') as HTMLImageElement;
 export let boss = document.getElementById('boss') as HTMLImageElement;
 export let blood = document.getElementById('blood') as HTMLImageElement;
 export let key = document.getElementById('key') as HTMLImageElement;
+export let die = document.getElementById('die') as HTMLImageElement;
+
 export let heroStats = {
   x: 1,
   y: 1,
@@ -24,6 +26,8 @@ export let heroStats = {
   SP: d6(1) + 7,
   hasKey: false,
 };
+heroStats.currentHP = heroStats.maxHP;
+
 export let tileWidth: number = 65;
 export let bossMonster: Monster = new Monster(0);
 export let skeleton1: Monster = new Skeleton(1);
@@ -34,14 +38,7 @@ monsterList.push(bossMonster);
 monsterList.push(skeleton1);
 monsterList.push(skeleton2);
 monsterList.push(skeleton3);
-heroStats.currentHP = heroStats.maxHP;
 
-
-
-export let monstersMove: boolean = false;
-export function updateMonstersMove(doTheyQuestionmark:boolean):boolean{
-  return monstersMove=doTheyQuestionmark;
-  }
 export let monsterHasKey: number = 1;
 export function updateMonsterHasKey(orderNumberOfMonster:number):number{
   return monsterHasKey=orderNumberOfMonster;

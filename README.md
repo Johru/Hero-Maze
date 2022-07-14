@@ -17,7 +17,13 @@ See original excercise description below. I am going to add a brief description 
 
 #### Setup
  
- 1. in variables.ts, instances of Monsters are created and pushed to monsterList.
+ 1. in variables.ts, instances of Monsters are created and pushed to monsterList. A list of wall coordinates is created.
+ 2. the **setup()** pushes additional walls to the list corresponding to map boundaries. Then it runs the **init()** method for each monster. A random Skeleton is given the key (this.hasKey=true).
+ 3. after assets load, **updateGameState()** is called to render them for the first time.
+
+ #### Game loop
+
+ 
  
 
 

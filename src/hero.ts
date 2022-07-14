@@ -5,16 +5,19 @@ import {
   updateDestination,
   ctx,
   tileWidth,
+  die
 } from './variables';
 import { checkIfMoveAllowed, battle,getSpriteByName } from './utility';
+
 export function checkIfHeroDead():void {
   if (heroStats.currentHP < 1) {
-    window.location.reload();
+    ctx.drawImage(die, 650,20,400,400)
+    setTimeout(()=>{window.location.reload();},3000)
   }
 }
 
 export function renderHero():void {
-  ctx.drawImage(
+    ctx.drawImage(
     getSpriteByName(heroStats.facing),
     (heroStats.x - 1) * tileWidth,
     (heroStats.y - 1) * tileWidth,
