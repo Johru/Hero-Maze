@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Wanderer Game</title>
+    <style>
+      .main-canvas {
+        margin: 20px;
+        border: 1px solid black;
+      }
+
+      .preload-images {
+        overflow: hidden;
+        height: 0;
+      }
+    
+    </style>
+  </head>
+  <body style="overflow:hidden">
+    <div class="preload-images">
+      <img id="floor" src="img/floor.png">
+      <img id="wall" src="img/wall.jpg">
+      <img id="hero-up" src="img/hero-up.png">
+      <img id="hero-right" src="img/hero-right.png">
+      <img id="hero-down" src="img/hero-down.png">
+      <img id="hero-left" src="img/hero-left.png">
+      <img id="skeleton" src="img/skeleton.png">
+      <img id="boss" src="img/boss.png">
+      <img id="blood" src="img/blood.png">
+      <img id="key" src="img/key.png" >
+      <img id="die" src="img/youdied.jpg" >
+      <img id="potion" src="img/potion.png" >
+      <img id="door" src="img/door.png" >
+    </div>
+    <canvas width="1120" height="650" class="main-canvas"></canvas>
+
+    <script>let exports = {};</script>
+    <script type="text/javascript" src="bundler.js"></script>
+    
+    
+    
+  </body>
+</html>
