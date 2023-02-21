@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+// import * as fs from 'fs';
 import {
   adjustWalls,
   pushBoundariesToWallList,
@@ -13,6 +13,8 @@ import {
   printstats,
   clearCanvas,
   renderPauseScreen,
+  paintLos,
+  paintPath,
 } from './map-render';
 import {
   checkIfHeroDead,
@@ -25,9 +27,9 @@ import {
 import {
   renderAllMonsters,
   checkIfBattleForMonsters,
-  attemptToMoveMonster,
   resetMonsters,
   assignKey,
+  checkLineOfSight,
 } from './monster';
 import {
   monsterList,
@@ -70,8 +72,10 @@ export let interval = setInterval(tickController, moveEveryXMiliseconds);
 //Game loop handling
 function tickController() {
   if (heroStats.currentHP < 1) return;
+  checkLineOfSight();
   for (let specimen of monsterList) {
-    attemptToMoveMonster(specimen);
+    // console.log(specimen.image + specimen.orderNumber);
+    // attemptToMoveMonster(specimen);
   }
 }
 export function resetScrolling(): void {
@@ -101,6 +105,8 @@ function updateGameState() {
   clearCanvas();
   renderFloor();
   renderWalls();
+  paintPath();
+  paintLos();
   printstats();
   renderAllMonsters();
   setHeroLevel();
@@ -160,7 +166,7 @@ function finale() {
 
   document.addEventListener('keydown', tempSpaceReset);
   console.log('event listener added');
-  function tempSpaceReset(notHit) {
+  function tempSpaceReset(notHit: any) {
     switch (notHit.key) {
       case ' ':
         resetMonstersLevel();

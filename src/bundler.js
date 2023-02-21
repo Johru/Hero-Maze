@@ -406,6 +406,7 @@ exports.setHeroLevel = setHeroLevel;
 "use strict";
 exports.__esModule = true;
 exports.setMonsterSpeed = exports.resetScrolling = exports.interval = exports.escapeanim = exports.escapedown = exports.downdown = exports.updown = exports.rightdown = exports.leftdown = exports.spacedown = exports.pdown = exports.scrollingModifierY = exports.scrollingModifierX = void 0;
+// import * as fs from 'fs';
 var setup_1 = require("./setup");
 var utility_1 = require("./utility");
 var map_render_1 = require("./map-render");
@@ -439,9 +440,11 @@ exports.interval = setInterval(tickController, variables_1.moveEveryXMiliseconds
 function tickController() {
     if (variables_1.heroStats.currentHP < 1)
         return;
+    (0, monster_1.checkLineOfSight)();
     for (var _i = 0, monsterList_1 = variables_1.monsterList; _i < monsterList_1.length; _i++) {
         var specimen = monsterList_1[_i];
-        (0, monster_1.attemptToMoveMonster)(specimen);
+        // console.log(specimen.image + specimen.orderNumber);
+        // attemptToMoveMonster(specimen);
     }
 }
 function resetScrolling() {
@@ -472,6 +475,8 @@ function updateGameState() {
     (0, map_render_1.clearCanvas)();
     (0, map_render_1.renderFloor)();
     (0, map_render_1.renderWalls)();
+    (0, map_render_1.paintPath)();
+    (0, map_render_1.paintLos)();
     (0, map_render_1.printstats)();
     (0, monster_1.renderAllMonsters)();
     (0, hero_1.setHeroLevel)();
@@ -702,10 +707,11 @@ document.addEventListener('keyup', function (keyHit) {
 },{"./hero":2,"./map-render":4,"./mapgeneration":5,"./monster":6,"./setup":7,"./utility":8,"./variables":9}],4:[function(require,module,exports){
 "use strict";
 exports.__esModule = true;
-exports.printstats = exports.renderPauseScreen = exports.renderWalls = exports.renderFloor = exports.clearCanvas = void 0;
+exports.printstats = exports.renderPauseScreen = exports.renderWalls = exports.paintLos = exports.paintPath = exports.renderFloor = exports.clearCanvas = void 0;
 var variables_1 = require("./variables");
 var utility_1 = require("./utility");
 var index_1 = require("./index");
+var monster_1 = require("./monster");
 function clearCanvas() {
     variables_1.ctx.clearRect(0, 0, variables_1.canvas.width, variables_1.canvas.height);
 }
@@ -718,6 +724,31 @@ function renderFloor() {
     }
 }
 exports.renderFloor = renderFloor;
+function paintPath() {
+    for (var i = 1; i < monster_1.pathToPaint.length; i++) {
+        variables_1.ctx.fillStyle = 'grey';
+        variables_1.ctx.fillRect((monster_1.pathToPaint[i][0] - 1) * variables_1.tileWidth + 5, (monster_1.pathToPaint[i][1] - 1) * variables_1.tileWidth + 5, 52, 52);
+    }
+    variables_1.ctx.fillStyle = 'black';
+}
+exports.paintPath = paintPath;
+function paintLos() {
+    for (var i = 0; i < monster_1.losArray.length; i++) {
+        variables_1.ctx.fillStyle = 'yellow';
+        variables_1.ctx.fillRect((monster_1.losArray[i][0] - 1) * variables_1.tileWidth + (variables_1.tileWidth - 25) / 2, (monster_1.losArray[i][1] - 1) * variables_1.tileWidth + (variables_1.tileWidth - 25) / 2, 25, 25);
+    }
+    variables_1.ctx.fillStyle = 'black';
+    variables_1.ctx.strokeStyle = 'green';
+    variables_1.ctx.lineWidth = 3;
+    if (monster_1.unblocked)
+        variables_1.ctx.strokeStyle = 'red';
+    variables_1.ctx.beginPath();
+    variables_1.ctx.moveTo((variables_1.heroStats.x - 1) * variables_1.tileWidth + variables_1.tileWidth / 2, (variables_1.heroStats.y - 1) * variables_1.tileWidth + variables_1.tileWidth / 2);
+    variables_1.ctx.lineTo(5 * 65 - variables_1.tileWidth / 2, 5 * 65 - variables_1.tileWidth / 2);
+    variables_1.ctx.stroke();
+    variables_1.ctx.lineWidth = 1;
+}
+exports.paintLos = paintLos;
 function renderWalls() {
     for (var i = 0; i < 10; i++) {
         for (var j = 0; j < 10; j++) {
@@ -736,6 +767,8 @@ function renderWallTile(xPosition, yPosition) {
 }
 function renderFloorTile(xPosition, yPosition) {
     variables_1.ctx.drawImage(variables_1.floor, xPosition * variables_1.tileWidth, yPosition * variables_1.tileWidth, variables_1.tileWidth, variables_1.tileWidth);
+    variables_1.ctx.strokeStyle = 'black';
+    variables_1.ctx.strokeRect(xPosition * variables_1.tileWidth, yPosition * variables_1.tileWidth, variables_1.tileWidth, variables_1.tileWidth);
 }
 function renderPauseScreen() {
     variables_1.ctx.drawImage(variables_1.square, 0, 0, 1120, 650);
@@ -892,13 +925,17 @@ function printstats() {
 }
 exports.printstats = printstats;
 
-},{"./index":3,"./utility":8,"./variables":9}],5:[function(require,module,exports){
+},{"./index":3,"./monster":6,"./utility":8,"./variables":9}],5:[function(require,module,exports){
 "use strict";
 exports.__esModule = true;
 exports.instantiateSetupArrays = exports.redPotionsTotal = exports.greenPotionsTotal = exports.theDoor = exports.bossMonster = exports.guardSetup = exports.bossSetup = exports.skeletonSetup = exports.redChestSetup = exports.redDoorSetup = exports.greenChestSetup = exports.greenDoorSetup = exports.witchSetup = exports.wallSetup = void 0;
 var classes_1 = require("./classes");
 var variables_1 = require("./variables");
 exports.wallSetup = [
+    // [
+    //   3, 3, 4, 4, 6, 6, 7, 7, 7, 2, 7, 3, 7, 4, 2, 7, 3, 7, 4, 7, 2, 2, 3, 2, 4,
+    //   2, 5, 2,
+    // ],
     [
         3, 1, 8, 1, 9, 1, 2, 2, 3, 2, 5, 2, 6, 2, 8, 2, 6, 3, 8, 3, 2, 4, 3, 4, 4,
         4, 6, 4, 2, 5, 4, 5, 6, 5, 8, 5, 9, 5, 10, 5, 2, 6, 4, 6, 8, 6, 6, 7, 1, 8,
@@ -932,17 +969,10 @@ exports.wallSetup = [
         11, 19, 15, 19, 18, 19, 11, 20, 12, 20, 15, 20, 18, 20,
     ],
 ];
-exports.witchSetup = [
-    [7, 10],
-    [1, 7],
-    [1, 4, 1, 18],
-];
-exports.greenDoorSetup = [
-    [9, 8],
-    [14, 15],
-    [5, 1, 1, 15],
-];
+exports.witchSetup = [[], [7, 10], [1, 7], [1, 4, 1, 18]];
+exports.greenDoorSetup = [[], [9, 8], [14, 15], [5, 1, 1, 15]];
 exports.greenChestSetup = [
+    [],
     [10, 1, 1, 10],
     [7, 1, 1, 15],
     [1, 5, 2, 5, 7, 2, 13, 4, 14, 6, 14, 7, 15, 11, 19, 11, 12, 15, 4, 18],
@@ -958,15 +988,12 @@ exports.redChestSetup = [
     [7, 3, 20, 1, 2, 9, 8, 11, 14, 19, 1, 20],
 ];
 exports.skeletonSetup = [
+    [5, 5],
     [6, 6, 9, 2, 2, 9],
     [3, 4, 11, 4, 14, 4, 10, 12, 4, 14],
     [6, 2, 4, 5, 1, 9, 14, 4, 16, 7, 16, 11, 20, 12, 7, 15],
 ];
-exports.bossSetup = [
-    [9, 9],
-    [13, 15],
-    [19, 20],
-];
+exports.bossSetup = [[], [9, 9], [13, 15], [19, 20]];
 exports.guardSetup = [
     [],
     [7, 2, 8, 10],
@@ -1024,11 +1051,14 @@ exports.instantiateSetupArrays = instantiateSetupArrays;
 },{"./classes":1,"./variables":9}],6:[function(require,module,exports){
 "use strict";
 exports.__esModule = true;
-exports.checkIfBattleForMonsters = exports.assignKey = exports.attemptToMoveMonster = exports.iterateList = exports.resetMonsters = exports.renderMonster = exports.renderAllMonsters = void 0;
+exports.checkIfBattleForMonsters = exports.assignKey = exports.attemptToMoveMonster = exports.isLOSunblocked = exports.findShortestPath = exports.paintPathToHero = exports.checkLineOfSight = exports.losArray = exports.iterateList = exports.resetMonsters = exports.renderMonster = exports.renderAllMonsters = exports.unblocked = exports.pathToPaint = void 0;
 var variables_1 = require("./variables");
 var utility_1 = require("./utility");
 var index_1 = require("./index");
 var mapgeneration_1 = require("./mapgeneration");
+exports.pathToPaint = [];
+// import cloneDeep from 'lodash.clonedeep';
+exports.unblocked = false;
 function renderAllMonsters() {
     for (var i = 0; i < variables_1.monsterList.length; i++) {
         renderMonster(variables_1.monsterList[i]);
@@ -1036,10 +1066,13 @@ function renderAllMonsters() {
 }
 exports.renderAllMonsters = renderAllMonsters;
 function renderMonster(specimen) {
-    if (specimen.alive && specimen.x - index_1.scrollingModifierX <= 10 && specimen.y - index_1.scrollingModifierY <= 10) {
+    if (specimen.alive &&
+        specimen.x - index_1.scrollingModifierX <= 10 &&
+        specimen.y - index_1.scrollingModifierY <= 10) {
         variables_1.ctx.drawImage((0, utility_1.getSpriteByName)(specimen.image), (specimen.x - 1 - index_1.scrollingModifierX) * variables_1.tileWidth, (specimen.y - 1 - index_1.scrollingModifierY) * variables_1.tileWidth, variables_1.tileWidth, variables_1.tileWidth);
     }
-    else if (specimen.x - index_1.scrollingModifierX <= 10 && specimen.y - index_1.scrollingModifierY <= 10) {
+    else if (specimen.x - index_1.scrollingModifierX <= 10 &&
+        specimen.y - index_1.scrollingModifierY <= 10) {
         variables_1.ctx.drawImage(variables_1.blood, (specimen.x - 1 - index_1.scrollingModifierX) * variables_1.tileWidth, (specimen.y - 1 - index_1.scrollingModifierY) * variables_1.tileWidth, variables_1.tileWidth, variables_1.tileWidth);
     }
 }
@@ -1050,10 +1083,10 @@ function resetMonsters() {
         monster.init();
     }
     var swordChest;
-    var greenChestKey = (Math.floor(Math.random() * (variables_1.greenChestList.length - 1)));
-    var redChestKey = (Math.floor(Math.random() * (variables_1.redChestList.length - 1)));
+    var greenChestKey = Math.floor(Math.random() * (variables_1.greenChestList.length - 1));
+    var redChestKey = Math.floor(Math.random() * (variables_1.redChestList.length - 1));
     if (variables_1.monsterLevel == 3) {
-        swordChest = (Math.floor(Math.random() * (variables_1.redChestList.length - 1)));
+        swordChest = Math.floor(Math.random() * (variables_1.redChestList.length - 1));
         console.log("gigachad sword in chest ".concat(swordChest));
     }
     var greenChestPotion = mapgeneration_1.greenPotionsTotal[variables_1.monsterLevel - 1];
@@ -1096,6 +1129,168 @@ function iterateList(input) {
     }
 }
 exports.iterateList = iterateList;
+exports.losArray = [];
+function checkLineOfSight() {
+    exports.losArray.length = 0;
+    var x1 = 5;
+    var y1 = 5;
+    var x0 = variables_1.heroStats.x;
+    var y0 = variables_1.heroStats.y;
+    var sx = x0 < x1 ? 1 : -1;
+    var sy = y0 < y1 ? 1 : -1;
+    var dx = Math.abs(x1 - x0);
+    var dy = Math.abs(y1 - y0);
+    var err = (dx > dy ? dx : -dy) / 2;
+    var break50 = 0;
+    while (true) {
+        if (x0 === x1 && y0 === y1) {
+            break;
+        }
+        if (err > -dx) {
+            err -= dy;
+            x0 += sx;
+        }
+        if (x0 === x1 && y0 === y1) {
+            break;
+        }
+        if (err > -dx)
+            exports.losArray.push([x0, y0]);
+        if (err < dy) {
+            err += dx;
+            y0 += sy;
+        }
+        if (x0 === x1 && y0 === y1) {
+            break;
+        }
+        exports.losArray.push([x0, y0]);
+        break50++;
+    }
+    exports.unblocked = true;
+    for (var i = 0; i < exports.losArray.length; i++) {
+        if (!isLOSunblocked(exports.losArray[i][0], exports.losArray[i][1]))
+            exports.unblocked = false;
+    }
+    if (exports.unblocked)
+        paintPathToHero();
+}
+exports.checkLineOfSight = checkLineOfSight;
+function paintPathToHero() {
+    exports.pathToPaint = findShortestPath(5, 5, variables_1.heroStats.x, variables_1.heroStats.y);
+}
+exports.paintPathToHero = paintPathToHero;
+function findShortestPath(startX, startY, targetX, targetY) {
+    console.log("Attempting to find path from (".concat(startX + ',' + startY, ") to (").concat(targetX + ',' + targetY, ")"));
+    var currentNode = {
+        thisNodeX: startX,
+        thisNodeY: startY,
+        fScore: 999,
+        gScore: 0,
+        prevNode: []
+    };
+    var openList = [];
+    var closedList = [];
+    var exploreList = [];
+    openList.push(currentNode);
+    var _loop_1 = function () {
+        exploreList.length = 0;
+        exploreList = [
+            [currentNode.thisNodeX, currentNode.thisNodeY - 1],
+            [currentNode.thisNodeX + 1, currentNode.thisNodeY],
+            [currentNode.thisNodeX, currentNode.thisNodeY + 1],
+            [currentNode.thisNodeX - 1, currentNode.thisNodeY],
+        ];
+        loop2: for (var i = 0; i < 4; i++) {
+            if (isWall(exploreList[i][0], exploreList[i][1])) {
+                continue loop2;
+            }
+            if (isOnClosedList(exploreList[i][0], exploreList[i][1])) {
+                continue loop2;
+            }
+            if (isOnOpenList(exploreList[i][0], exploreList[i][1])) {
+                continue loop2;
+            }
+            var fX = exploreList[i][0] - targetX;
+            var fY = exploreList[i][1] - targetY;
+            var gScore = currentNode.gScore + 1;
+            var fScore = Math.sqrt(fX * fX + fY * fY) + gScore;
+            var newNode = {
+                thisNodeX: exploreList[i][0],
+                thisNodeY: exploreList[i][1],
+                fScore: fScore,
+                gScore: gScore,
+                prevNode: [currentNode.thisNodeX, currentNode.thisNodeY]
+            };
+            openList.push(newNode);
+        }
+        openList.sort(function (a, b) { return (a.fScore < b.fScore ? -1 : 1); });
+        var clone = JSON.parse(JSON.stringify(currentNode));
+        closedList.push(clone);
+        currentNode = JSON.parse(JSON.stringify(openList[0]));
+        openList.shift();
+        if (currentNode.thisNodeX == targetX && currentNode.thisNodeY == targetY) {
+            var shortestPath = [];
+            var current = [currentNode.thisNodeX, currentNode.thisNodeY];
+            shortestPath.push(current);
+            var previous_1 = closedList.find(function (element) {
+                return element.thisNodeX == currentNode.prevNode[0] &&
+                    element.thisNodeY == currentNode.prevNode[1];
+            });
+            for (var i = 0; i < currentNode.gScore; i++) {
+                shortestPath.push([previous_1.thisNodeX, previous_1.thisNodeY]);
+                var previous2 = closedList.find(function (element) {
+                    return element.thisNodeX == previous_1.prevNode[0] &&
+                        element.thisNodeY == previous_1.prevNode[1];
+                });
+                previous_1 = previous2;
+            }
+            console.log.apply(console, shortestPath);
+            return { value: shortestPath.reverse() };
+            return "break-loop1";
+        }
+    };
+    // loop1: for (let j = 0; j < 15; j++) {
+    loop1: while (openList.length > 0) {
+        var state_1 = _loop_1();
+        if (typeof state_1 === "object")
+            return state_1.value;
+        switch (state_1) {
+            case "break-loop1": break loop1;
+        }
+    }
+    function isOnOpenList(x, y) {
+        for (var _i = 0, openList_1 = openList; _i < openList_1.length; _i++) {
+            var node = openList_1[_i];
+            if (node.thisNodeX == x && node.thisNodeY == y)
+                return true;
+        }
+        return false;
+    }
+    function isOnClosedList(x, y) {
+        for (var _i = 0, closedList_1 = closedList; _i < closedList_1.length; _i++) {
+            var node = closedList_1[_i];
+            if (node.thisNodeX == x && node.thisNodeY == y)
+                return true;
+        }
+        return false;
+    }
+    function isWall(x, y) {
+        for (var i = 0; i < variables_1.wallPositionList.length; i++) {
+            if (x == variables_1.wallPositionList[i][0] && y == variables_1.wallPositionList[i][1])
+                return true;
+        }
+        return false;
+    }
+}
+exports.findShortestPath = findShortestPath;
+function isLOSunblocked(x, y) {
+    for (var i = 0; i < variables_1.wallPositionList.length; i++) {
+        if (x == variables_1.wallPositionList[i][0] && y == variables_1.wallPositionList[i][1]) {
+            return false;
+        }
+    }
+    return true;
+}
+exports.isLOSunblocked = isLOSunblocked;
 function attemptToMoveMonster(specimen) {
     if (index_1.escapedown)
         return;
@@ -1108,7 +1303,9 @@ function attemptToMoveMonster(specimen) {
                 break;
             direction = Math.floor(Math.random() * 4) + 1;
             monsterDestination(direction, specimen);
-            if ((0, utility_1.checkIfMoveAllowed)() && checkOtherMonsters(specimen) && specimen.image != 'door') {
+            if ((0, utility_1.checkIfMoveAllowed)() &&
+                checkOtherMonsters(specimen) &&
+                specimen.image != 'door') {
                 specimen.x = (0, variables_1.getDestination)()[0];
                 specimen.y = (0, variables_1.getDestination)()[1];
                 hasMoved = true;
@@ -1147,7 +1344,7 @@ function checkOtherMonsters(specimen) {
     return true;
 }
 function assignKey() {
-    var witchNumber = (Math.floor(Math.random() * (variables_1.witchList.length - 1)));
+    var witchNumber = Math.floor(Math.random() * (variables_1.witchList.length - 1));
     for (var _i = 0, witchList_1 = variables_1.witchList; _i < witchList_1.length; _i++) {
         var witsch = witchList_1[_i];
         if (witsch.orderNumber == witchNumber) {
@@ -1162,7 +1359,10 @@ exports.assignKey = assignKey;
 function checkIfBattleForMonsters() {
     for (var _i = 0, monsterList_3 = variables_1.monsterList; _i < monsterList_3.length; _i++) {
         var monster = monsterList_3[_i];
-        if (variables_1.heroStats.x == monster.x && variables_1.heroStats.y == monster.y && monster.alive && monster.speed > 0) {
+        if (variables_1.heroStats.x == monster.x &&
+            variables_1.heroStats.y == monster.y &&
+            monster.alive &&
+            monster.speed > 0) {
             (0, utility_1.battle)(monster);
         }
     }
@@ -1191,7 +1391,10 @@ function setup() {
 exports.setup = setup;
 function adjustWalls() {
     for (var i = 0; i < mapgeneration_1.wallSetup[variables_1.monsterLevel - 1].length; i += 2) {
-        variables_1.wallPositionList.push([mapgeneration_1.wallSetup[variables_1.monsterLevel - 1][i], mapgeneration_1.wallSetup[variables_1.monsterLevel - 1][i + 1]]);
+        variables_1.wallPositionList.push([
+            mapgeneration_1.wallSetup[variables_1.monsterLevel - 1][i],
+            mapgeneration_1.wallSetup[variables_1.monsterLevel - 1][i + 1],
+        ]);
     }
 }
 exports.adjustWalls = adjustWalls;

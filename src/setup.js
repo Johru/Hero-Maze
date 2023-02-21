@@ -19,7 +19,10 @@ function setup() {
 exports.setup = setup;
 function adjustWalls() {
     for (var i = 0; i < mapgeneration_1.wallSetup[variables_1.monsterLevel - 1].length; i += 2) {
-        variables_1.wallPositionList.push([mapgeneration_1.wallSetup[variables_1.monsterLevel - 1][i], mapgeneration_1.wallSetup[variables_1.monsterLevel - 1][i + 1]]);
+        variables_1.wallPositionList.push([
+            mapgeneration_1.wallSetup[variables_1.monsterLevel - 1][i],
+            mapgeneration_1.wallSetup[variables_1.monsterLevel - 1][i + 1],
+        ]);
     }
 }
 exports.adjustWalls = adjustWalls;

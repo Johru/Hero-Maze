@@ -1,26 +1,27 @@
 import { assignKey, resetMonsters } from './monster';
 import { heroInit } from './hero';
-import { emptyMapLists, monsterLevel, wallPositionList} from './variables';
+import { emptyMapLists, monsterLevel, wallPositionList } from './variables';
 import { instantiateSetupArrays, wallSetup } from './mapgeneration';
 export let floorList: number[] = [1, 1];
 
 export let mapSize: number = 10;
 
-
 export function setup(): void {
   emptyMapLists();
   instantiateSetupArrays();
-   adjustWalls();
+  adjustWalls();
   pushBoundariesToWallList();
   heroInit();
   resetMonsters();
   assignKey();
-  
 }
 
 export function adjustWalls(): void {
-  for (let i = 0; i <wallSetup[monsterLevel-1].length; i+=2) {
-   wallPositionList.push([wallSetup[monsterLevel-1][i],wallSetup[monsterLevel-1][i+1]])
+  for (let i = 0; i < wallSetup[monsterLevel - 1].length; i += 2) {
+    wallPositionList.push([
+      wallSetup[monsterLevel - 1][i],
+      wallSetup[monsterLevel - 1][i + 1],
+    ]);
   }
 }
 
@@ -39,8 +40,6 @@ export function pushBoundariesToWallList(): void {
   }
 }
 
-export function setMapSize() :void{
+export function setMapSize(): void {
   mapSize = 5 + monsterLevel * 5;
 }
-
-

@@ -1,9 +1,10 @@
 "use strict";
 exports.__esModule = true;
-exports.printstats = exports.renderPauseScreen = exports.renderWalls = exports.renderFloor = exports.clearCanvas = void 0;
+exports.printstats = exports.renderPauseScreen = exports.renderWalls = exports.paintLos = exports.paintPath = exports.renderFloor = exports.clearCanvas = void 0;
 var variables_1 = require("./variables");
 var utility_1 = require("./utility");
 var index_1 = require("./index");
+var monster_1 = require("./monster");
 function clearCanvas() {
     variables_1.ctx.clearRect(0, 0, variables_1.canvas.width, variables_1.canvas.height);
 }
@@ -16,6 +17,31 @@ function renderFloor() {
     }
 }
 exports.renderFloor = renderFloor;
+function paintPath() {
+    for (var i = 1; i < monster_1.pathToPaint.length; i++) {
+        variables_1.ctx.fillStyle = 'grey';
+        variables_1.ctx.fillRect((monster_1.pathToPaint[i][0] - 1) * variables_1.tileWidth + 5, (monster_1.pathToPaint[i][1] - 1) * variables_1.tileWidth + 5, 52, 52);
+    }
+    variables_1.ctx.fillStyle = 'black';
+}
+exports.paintPath = paintPath;
+function paintLos() {
+    for (var i = 0; i < monster_1.losArray.length; i++) {
+        variables_1.ctx.fillStyle = 'yellow';
+        variables_1.ctx.fillRect((monster_1.losArray[i][0] - 1) * variables_1.tileWidth + (variables_1.tileWidth - 25) / 2, (monster_1.losArray[i][1] - 1) * variables_1.tileWidth + (variables_1.tileWidth - 25) / 2, 25, 25);
+    }
+    variables_1.ctx.fillStyle = 'black';
+    variables_1.ctx.strokeStyle = 'green';
+    variables_1.ctx.lineWidth = 3;
+    if (monster_1.unblocked)
+        variables_1.ctx.strokeStyle = 'red';
+    variables_1.ctx.beginPath();
+    variables_1.ctx.moveTo((variables_1.heroStats.x - 1) * variables_1.tileWidth + variables_1.tileWidth / 2, (variables_1.heroStats.y - 1) * variables_1.tileWidth + variables_1.tileWidth / 2);
+    variables_1.ctx.lineTo(5 * 65 - variables_1.tileWidth / 2, 5 * 65 - variables_1.tileWidth / 2);
+    variables_1.ctx.stroke();
+    variables_1.ctx.lineWidth = 1;
+}
+exports.paintLos = paintLos;
 function renderWalls() {
     for (var i = 0; i < 10; i++) {
         for (var j = 0; j < 10; j++) {
@@ -34,6 +60,8 @@ function renderWallTile(xPosition, yPosition) {
 }
 function renderFloorTile(xPosition, yPosition) {
     variables_1.ctx.drawImage(variables_1.floor, xPosition * variables_1.tileWidth, yPosition * variables_1.tileWidth, variables_1.tileWidth, variables_1.tileWidth);
+    variables_1.ctx.strokeStyle = 'black';
+    variables_1.ctx.strokeRect(xPosition * variables_1.tileWidth, yPosition * variables_1.tileWidth, variables_1.tileWidth, variables_1.tileWidth);
 }
 function renderPauseScreen() {
     variables_1.ctx.drawImage(variables_1.square, 0, 0, 1120, 650);

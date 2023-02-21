@@ -45,6 +45,7 @@ import {
   spacedown,
   updown,
 } from './index';
+import { losArray, pathToPaint, unblocked } from './monster';
 
 export function clearCanvas(): void {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -55,6 +56,43 @@ export function renderFloor(): void {
       renderFloorTile(i, j);
     }
   }
+}
+
+export function paintPath() {
+  for (let i = 1; i < pathToPaint.length; i++) {
+    ctx.fillStyle = 'grey';
+    ctx.fillRect(
+      (pathToPaint[i][0] - 1) * tileWidth + 5,
+      (pathToPaint[i][1] - 1) * tileWidth + 5,
+      52,
+      52
+    );
+  }
+  ctx.fillStyle = 'black';
+}
+
+export function paintLos() {
+  for (let i = 0; i < losArray.length; i++) {
+    ctx.fillStyle = 'yellow';
+    ctx.fillRect(
+      (losArray[i][0] - 1) * tileWidth + (tileWidth - 25) / 2,
+      (losArray[i][1] - 1) * tileWidth + (tileWidth - 25) / 2,
+      25,
+      25
+    );
+  }
+  ctx.fillStyle = 'black';
+  ctx.strokeStyle = 'green';
+  ctx.lineWidth = 3;
+  if (unblocked) ctx.strokeStyle = 'red';
+  ctx.beginPath();
+  ctx.moveTo(
+    (heroStats.x - 1) * tileWidth + tileWidth / 2,
+    (heroStats.y - 1) * tileWidth + tileWidth / 2
+  );
+  ctx.lineTo(5 * 65 - tileWidth / 2, 5 * 65 - tileWidth / 2);
+  ctx.stroke();
+  ctx.lineWidth = 1;
 }
 
 export function renderWalls(): void {
@@ -84,6 +122,13 @@ function renderWallTile(xPosition: number, yPosition: number): void {
 function renderFloorTile(xPosition: number, yPosition: number): void {
   ctx.drawImage(
     floor,
+    xPosition * tileWidth,
+    yPosition * tileWidth,
+    tileWidth,
+    tileWidth
+  );
+  ctx.strokeStyle = 'black';
+  ctx.strokeRect(
     xPosition * tileWidth,
     yPosition * tileWidth,
     tileWidth,

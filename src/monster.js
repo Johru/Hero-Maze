@@ -1,10 +1,13 @@
 "use strict";
 exports.__esModule = true;
-exports.checkIfBattleForMonsters = exports.assignKey = exports.attemptToMoveMonster = exports.iterateList = exports.resetMonsters = exports.renderMonster = exports.renderAllMonsters = void 0;
+exports.checkIfBattleForMonsters = exports.assignKey = exports.attemptToMoveMonster = exports.isLOSunblocked = exports.findShortestPath = exports.paintPathToHero = exports.checkLineOfSight = exports.losArray = exports.iterateList = exports.resetMonsters = exports.renderMonster = exports.renderAllMonsters = exports.unblocked = exports.pathToPaint = void 0;
 var variables_1 = require("./variables");
 var utility_1 = require("./utility");
 var index_1 = require("./index");
 var mapgeneration_1 = require("./mapgeneration");
+exports.pathToPaint = [];
+// import cloneDeep from 'lodash.clonedeep';
+exports.unblocked = false;
 function renderAllMonsters() {
     for (var i = 0; i < variables_1.monsterList.length; i++) {
         renderMonster(variables_1.monsterList[i]);
@@ -12,10 +15,13 @@ function renderAllMonsters() {
 }
 exports.renderAllMonsters = renderAllMonsters;
 function renderMonster(specimen) {
-    if (specimen.alive && specimen.x - index_1.scrollingModifierX <= 10 && specimen.y - index_1.scrollingModifierY <= 10) {
+    if (specimen.alive &&
+        specimen.x - index_1.scrollingModifierX <= 10 &&
+        specimen.y - index_1.scrollingModifierY <= 10) {
         variables_1.ctx.drawImage((0, utility_1.getSpriteByName)(specimen.image), (specimen.x - 1 - index_1.scrollingModifierX) * variables_1.tileWidth, (specimen.y - 1 - index_1.scrollingModifierY) * variables_1.tileWidth, variables_1.tileWidth, variables_1.tileWidth);
     }
-    else if (specimen.x - index_1.scrollingModifierX <= 10 && specimen.y - index_1.scrollingModifierY <= 10) {
+    else if (specimen.x - index_1.scrollingModifierX <= 10 &&
+        specimen.y - index_1.scrollingModifierY <= 10) {
         variables_1.ctx.drawImage(variables_1.blood, (specimen.x - 1 - index_1.scrollingModifierX) * variables_1.tileWidth, (specimen.y - 1 - index_1.scrollingModifierY) * variables_1.tileWidth, variables_1.tileWidth, variables_1.tileWidth);
     }
 }
@@ -26,10 +32,10 @@ function resetMonsters() {
         monster.init();
     }
     var swordChest;
-    var greenChestKey = (Math.floor(Math.random() * (variables_1.greenChestList.length - 1)));
-    var redChestKey = (Math.floor(Math.random() * (variables_1.redChestList.length - 1)));
+    var greenChestKey = Math.floor(Math.random() * (variables_1.greenChestList.length - 1));
+    var redChestKey = Math.floor(Math.random() * (variables_1.redChestList.length - 1));
     if (variables_1.monsterLevel == 3) {
-        swordChest = (Math.floor(Math.random() * (variables_1.redChestList.length - 1)));
+        swordChest = Math.floor(Math.random() * (variables_1.redChestList.length - 1));
         console.log("gigachad sword in chest ".concat(swordChest));
     }
     var greenChestPotion = mapgeneration_1.greenPotionsTotal[variables_1.monsterLevel - 1];
@@ -72,6 +78,168 @@ function iterateList(input) {
     }
 }
 exports.iterateList = iterateList;
+exports.losArray = [];
+function checkLineOfSight() {
+    exports.losArray.length = 0;
+    var x1 = 5;
+    var y1 = 5;
+    var x0 = variables_1.heroStats.x;
+    var y0 = variables_1.heroStats.y;
+    var sx = x0 < x1 ? 1 : -1;
+    var sy = y0 < y1 ? 1 : -1;
+    var dx = Math.abs(x1 - x0);
+    var dy = Math.abs(y1 - y0);
+    var err = (dx > dy ? dx : -dy) / 2;
+    var break50 = 0;
+    while (true) {
+        if (x0 === x1 && y0 === y1) {
+            break;
+        }
+        if (err > -dx) {
+            err -= dy;
+            x0 += sx;
+        }
+        if (x0 === x1 && y0 === y1) {
+            break;
+        }
+        if (err > -dx)
+            exports.losArray.push([x0, y0]);
+        if (err < dy) {
+            err += dx;
+            y0 += sy;
+        }
+        if (x0 === x1 && y0 === y1) {
+            break;
+        }
+        exports.losArray.push([x0, y0]);
+        break50++;
+    }
+    exports.unblocked = true;
+    for (var i = 0; i < exports.losArray.length; i++) {
+        if (!isLOSunblocked(exports.losArray[i][0], exports.losArray[i][1]))
+            exports.unblocked = false;
+    }
+    if (exports.unblocked)
+        paintPathToHero();
+}
+exports.checkLineOfSight = checkLineOfSight;
+function paintPathToHero() {
+    exports.pathToPaint = findShortestPath(5, 5, variables_1.heroStats.x, variables_1.heroStats.y);
+}
+exports.paintPathToHero = paintPathToHero;
+function findShortestPath(startX, startY, targetX, targetY) {
+    console.log("Attempting to find path from (".concat(startX + ',' + startY, ") to (").concat(targetX + ',' + targetY, ")"));
+    var currentNode = {
+        thisNodeX: startX,
+        thisNodeY: startY,
+        fScore: 999,
+        gScore: 0,
+        prevNode: []
+    };
+    var openList = [];
+    var closedList = [];
+    var exploreList = [];
+    openList.push(currentNode);
+    var _loop_1 = function () {
+        exploreList.length = 0;
+        exploreList = [
+            [currentNode.thisNodeX, currentNode.thisNodeY - 1],
+            [currentNode.thisNodeX + 1, currentNode.thisNodeY],
+            [currentNode.thisNodeX, currentNode.thisNodeY + 1],
+            [currentNode.thisNodeX - 1, currentNode.thisNodeY],
+        ];
+        loop2: for (var i = 0; i < 4; i++) {
+            if (isWall(exploreList[i][0], exploreList[i][1])) {
+                continue loop2;
+            }
+            if (isOnClosedList(exploreList[i][0], exploreList[i][1])) {
+                continue loop2;
+            }
+            if (isOnOpenList(exploreList[i][0], exploreList[i][1])) {
+                continue loop2;
+            }
+            var fX = exploreList[i][0] - targetX;
+            var fY = exploreList[i][1] - targetY;
+            var gScore = currentNode.gScore + 1;
+            var fScore = Math.sqrt(fX * fX + fY * fY) + gScore;
+            var newNode = {
+                thisNodeX: exploreList[i][0],
+                thisNodeY: exploreList[i][1],
+                fScore: fScore,
+                gScore: gScore,
+                prevNode: [currentNode.thisNodeX, currentNode.thisNodeY]
+            };
+            openList.push(newNode);
+        }
+        openList.sort(function (a, b) { return (a.fScore < b.fScore ? -1 : 1); });
+        var clone = JSON.parse(JSON.stringify(currentNode));
+        closedList.push(clone);
+        currentNode = JSON.parse(JSON.stringify(openList[0]));
+        openList.shift();
+        if (currentNode.thisNodeX == targetX && currentNode.thisNodeY == targetY) {
+            var shortestPath = [];
+            var current = [currentNode.thisNodeX, currentNode.thisNodeY];
+            shortestPath.push(current);
+            var previous_1 = closedList.find(function (element) {
+                return element.thisNodeX == currentNode.prevNode[0] &&
+                    element.thisNodeY == currentNode.prevNode[1];
+            });
+            for (var i = 0; i < currentNode.gScore; i++) {
+                shortestPath.push([previous_1.thisNodeX, previous_1.thisNodeY]);
+                var previous2 = closedList.find(function (element) {
+                    return element.thisNodeX == previous_1.prevNode[0] &&
+                        element.thisNodeY == previous_1.prevNode[1];
+                });
+                previous_1 = previous2;
+            }
+            console.log.apply(console, shortestPath);
+            return { value: shortestPath.reverse() };
+            return "break-loop1";
+        }
+    };
+    // loop1: for (let j = 0; j < 15; j++) {
+    loop1: while (openList.length > 0) {
+        var state_1 = _loop_1();
+        if (typeof state_1 === "object")
+            return state_1.value;
+        switch (state_1) {
+            case "break-loop1": break loop1;
+        }
+    }
+    function isOnOpenList(x, y) {
+        for (var _i = 0, openList_1 = openList; _i < openList_1.length; _i++) {
+            var node = openList_1[_i];
+            if (node.thisNodeX == x && node.thisNodeY == y)
+                return true;
+        }
+        return false;
+    }
+    function isOnClosedList(x, y) {
+        for (var _i = 0, closedList_1 = closedList; _i < closedList_1.length; _i++) {
+            var node = closedList_1[_i];
+            if (node.thisNodeX == x && node.thisNodeY == y)
+                return true;
+        }
+        return false;
+    }
+    function isWall(x, y) {
+        for (var i = 0; i < variables_1.wallPositionList.length; i++) {
+            if (x == variables_1.wallPositionList[i][0] && y == variables_1.wallPositionList[i][1])
+                return true;
+        }
+        return false;
+    }
+}
+exports.findShortestPath = findShortestPath;
+function isLOSunblocked(x, y) {
+    for (var i = 0; i < variables_1.wallPositionList.length; i++) {
+        if (x == variables_1.wallPositionList[i][0] && y == variables_1.wallPositionList[i][1]) {
+            return false;
+        }
+    }
+    return true;
+}
+exports.isLOSunblocked = isLOSunblocked;
 function attemptToMoveMonster(specimen) {
     if (index_1.escapedown)
         return;
@@ -84,7 +252,9 @@ function attemptToMoveMonster(specimen) {
                 break;
             direction = Math.floor(Math.random() * 4) + 1;
             monsterDestination(direction, specimen);
-            if ((0, utility_1.checkIfMoveAllowed)() && checkOtherMonsters(specimen) && specimen.image != 'door') {
+            if ((0, utility_1.checkIfMoveAllowed)() &&
+                checkOtherMonsters(specimen) &&
+                specimen.image != 'door') {
                 specimen.x = (0, variables_1.getDestination)()[0];
                 specimen.y = (0, variables_1.getDestination)()[1];
                 hasMoved = true;
@@ -123,7 +293,7 @@ function checkOtherMonsters(specimen) {
     return true;
 }
 function assignKey() {
-    var witchNumber = (Math.floor(Math.random() * (variables_1.witchList.length - 1)));
+    var witchNumber = Math.floor(Math.random() * (variables_1.witchList.length - 1));
     for (var _i = 0, witchList_1 = variables_1.witchList; _i < witchList_1.length; _i++) {
         var witsch = witchList_1[_i];
         if (witsch.orderNumber == witchNumber) {
@@ -138,7 +308,10 @@ exports.assignKey = assignKey;
 function checkIfBattleForMonsters() {
     for (var _i = 0, monsterList_3 = variables_1.monsterList; _i < monsterList_3.length; _i++) {
         var monster = monsterList_3[_i];
-        if (variables_1.heroStats.x == monster.x && variables_1.heroStats.y == monster.y && monster.alive && monster.speed > 0) {
+        if (variables_1.heroStats.x == monster.x &&
+            variables_1.heroStats.y == monster.y &&
+            monster.alive &&
+            monster.speed > 0) {
             (0, utility_1.battle)(monster);
         }
     }
