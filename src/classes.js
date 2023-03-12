@@ -36,6 +36,7 @@ var Monster = /** @class */ (function () {
         if (alive === void 0) { alive = true; }
         if (hasKey === void 0) { hasKey = false; }
         this.speed = 1;
+        this.path = [];
         this.orderNumber = order;
         this.x = x;
         this.y = y;
@@ -67,7 +68,7 @@ var Skeleton = /** @class */ (function (_super) {
     }
     Skeleton.prototype.init = function () {
         this.image = 'skeleton';
-        this.pickASpot(mapgeneration_1.skeletonSetup[variables_1.monsterLevel - 1][(this.orderNumber) * 2], mapgeneration_1.skeletonSetup[variables_1.monsterLevel - 1][(this.orderNumber) * 2 + 1]);
+        this.pickASpot(mapgeneration_1.skeletonSetup[variables_1.monsterLevel - 1][this.orderNumber * 2], mapgeneration_1.skeletonSetup[variables_1.monsterLevel - 1][this.orderNumber * 2 + 1]);
         this.alive = true;
         this.HP = 10;
         this.DP = 1;
@@ -83,7 +84,7 @@ var Guard = /** @class */ (function (_super) {
     }
     Guard.prototype.init = function () {
         this.image = 'guard';
-        this.pickASpot(mapgeneration_1.guardSetup[variables_1.monsterLevel - 1][(this.orderNumber) * 2], mapgeneration_1.guardSetup[variables_1.monsterLevel - 1][(this.orderNumber) * 2 + 1]);
+        this.pickASpot(mapgeneration_1.guardSetup[variables_1.monsterLevel - 1][this.orderNumber * 2], mapgeneration_1.guardSetup[variables_1.monsterLevel - 1][this.orderNumber * 2 + 1]);
         this.alive = true;
         this.HP = 12 + variables_1.monsterLevel * 2;
         this.DP = 2 + variables_1.monsterLevel;
@@ -99,7 +100,7 @@ var Witch = /** @class */ (function (_super) {
     }
     Witch.prototype.init = function () {
         this.image = 'witch';
-        this.pickASpot(mapgeneration_1.witchSetup[variables_1.monsterLevel - 1][(this.orderNumber) * 2], mapgeneration_1.witchSetup[variables_1.monsterLevel - 1][(this.orderNumber) * 2 + 1]);
+        this.pickASpot(mapgeneration_1.witchSetup[variables_1.monsterLevel - 1][this.orderNumber * 2], mapgeneration_1.witchSetup[variables_1.monsterLevel - 1][this.orderNumber * 2 + 1]);
         this.alive = true;
         this.HP = 5;
         this.DP = 0;
@@ -118,6 +119,7 @@ var Door = /** @class */ (function (_super) {
     Door.prototype.init = function () {
         this.image = 'door';
         this.pickASpot(setup_1.mapSize, setup_1.mapSize);
+        // this.alive = true;
         this.alive = true;
         this.HP = 0;
         this.DP = 0;
@@ -139,7 +141,7 @@ var GreenChest = /** @class */ (function (_super) {
     }
     GreenChest.prototype.init = function () {
         this.image = 'greenChest';
-        this.pickASpot(mapgeneration_1.greenChestSetup[variables_1.monsterLevel - 1][(this.orderNumber) * 2], mapgeneration_1.greenChestSetup[variables_1.monsterLevel - 1][(this.orderNumber) * 2 + 1]);
+        this.pickASpot(mapgeneration_1.greenChestSetup[variables_1.monsterLevel - 1][this.orderNumber * 2], mapgeneration_1.greenChestSetup[variables_1.monsterLevel - 1][this.orderNumber * 2 + 1]);
         this.alive = true;
         this.HP = 0;
         this.DP = 0;
@@ -161,7 +163,7 @@ var RedChest = /** @class */ (function (_super) {
     }
     RedChest.prototype.init = function () {
         this.image = 'redChest';
-        this.pickASpot(mapgeneration_1.redChestSetup[variables_1.monsterLevel - 1][(this.orderNumber) * 2], mapgeneration_1.redChestSetup[variables_1.monsterLevel - 1][(this.orderNumber) * 2 + 1]);
+        this.pickASpot(mapgeneration_1.redChestSetup[variables_1.monsterLevel - 1][this.orderNumber * 2], mapgeneration_1.redChestSetup[variables_1.monsterLevel - 1][this.orderNumber * 2 + 1]);
         this.alive = true;
         this.hasSword = false;
         this.HP = 0;
@@ -180,7 +182,7 @@ var GreenDoor = /** @class */ (function (_super) {
     }
     GreenDoor.prototype.init = function () {
         this.image = 'greenDoor';
-        this.pickASpot(mapgeneration_1.greenDoorSetup[variables_1.monsterLevel - 1][(this.orderNumber) * 2], mapgeneration_1.greenDoorSetup[variables_1.monsterLevel - 1][(this.orderNumber) * 2 + 1]);
+        this.pickASpot(mapgeneration_1.greenDoorSetup[variables_1.monsterLevel - 1][this.orderNumber * 2], mapgeneration_1.greenDoorSetup[variables_1.monsterLevel - 1][this.orderNumber * 2 + 1]);
         this.alive = true;
         this.HP = 0;
         this.DP = 0;
@@ -198,7 +200,7 @@ var RedDoor = /** @class */ (function (_super) {
     }
     RedDoor.prototype.init = function () {
         this.image = 'redDoor';
-        this.pickASpot(mapgeneration_1.redDoorSetup[variables_1.monsterLevel - 1][(this.orderNumber) * 2], mapgeneration_1.redDoorSetup[variables_1.monsterLevel - 1][(this.orderNumber) * 2 + 1]);
+        this.pickASpot(mapgeneration_1.redDoorSetup[variables_1.monsterLevel - 1][this.orderNumber * 2], mapgeneration_1.redDoorSetup[variables_1.monsterLevel - 1][this.orderNumber * 2 + 1]);
         this.alive = true;
         this.HP = 0;
         this.DP = 0;

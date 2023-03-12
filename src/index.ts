@@ -13,8 +13,6 @@ import {
   printstats,
   clearCanvas,
   renderPauseScreen,
-  paintLos,
-  paintPath,
 } from './map-render';
 import {
   checkIfHeroDead,
@@ -30,6 +28,7 @@ import {
   resetMonsters,
   assignKey,
   checkLineOfSight,
+  attemptToMoveMonster,
 } from './monster';
 import {
   monsterList,
@@ -72,10 +71,8 @@ export let interval = setInterval(tickController, moveEveryXMiliseconds);
 //Game loop handling
 function tickController() {
   if (heroStats.currentHP < 1) return;
-  checkLineOfSight();
   for (let specimen of monsterList) {
-    // console.log(specimen.image + specimen.orderNumber);
-    // attemptToMoveMonster(specimen);
+    attemptToMoveMonster(specimen);
   }
 }
 export function resetScrolling(): void {
@@ -105,8 +102,6 @@ function updateGameState() {
   clearCanvas();
   renderFloor();
   renderWalls();
-  paintPath();
-  paintLos();
   printstats();
   renderAllMonsters();
   setHeroLevel();

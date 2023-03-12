@@ -45,7 +45,7 @@ import {
   spacedown,
   updown,
 } from './index';
-import { losArray, pathToPaint, unblocked } from './monster';
+import { losArray, unblocked } from './monster';
 
 export function clearCanvas(): void {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -58,20 +58,21 @@ export function renderFloor(): void {
   }
 }
 
-export function paintPath() {
-  for (let i = 1; i < pathToPaint.length; i++) {
-    ctx.fillStyle = 'grey';
-    ctx.fillRect(
-      (pathToPaint[i][0] - 1) * tileWidth + 5,
-      (pathToPaint[i][1] - 1) * tileWidth + 5,
-      52,
-      52
-    );
-  }
-  ctx.fillStyle = 'black';
-}
+// export function paintPath(x: number, y: number) {
+//   // let pathToPaint = paintPathToHero(x, y);
+//   for (let i = 1; i < pathToPaint.length; i++) {
+//     ctx.fillStyle = 'grey';
+//     ctx.fillRect(
+//       (pathToPaint[i][0] - 1) * tileWidth + 5,
+//       (pathToPaint[i][1] - 1) * tileWidth + 5,
+//       52,
+//       52
+//     );
+//   }
+//   ctx.fillStyle = 'black';
+// }
 
-export function paintLos() {
+export function paintLos(x: number, y: number) {
   for (let i = 0; i < losArray.length; i++) {
     ctx.fillStyle = 'yellow';
     ctx.fillRect(
@@ -90,7 +91,7 @@ export function paintLos() {
     (heroStats.x - 1) * tileWidth + tileWidth / 2,
     (heroStats.y - 1) * tileWidth + tileWidth / 2
   );
-  ctx.lineTo(5 * 65 - tileWidth / 2, 5 * 65 - tileWidth / 2);
+  ctx.lineTo(x * 65 - tileWidth / 2, y * 65 - tileWidth / 2);
   ctx.stroke();
   ctx.lineWidth = 1;
 }

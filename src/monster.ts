@@ -21,12 +21,16 @@ import {
   spacedown,
 } from './index';
 import { greenPotionsTotal, redPotionsTotal } from './mapgeneration';
-import { paintPath } from './map-render';
+import {} from './map-render';
 export let pathToPaint: number[][] = [];
 // import cloneDeep from 'lodash.clonedeep';
 export let unblocked = false;
 
 export function renderAllMonsters(): void {
+  for (let i = 0; i < monsterList.length; i++) {
+    renderDeadMonster(monsterList[i]);
+  }
+
   for (let i = 0; i < monsterList.length; i++) {
     renderMonster(monsterList[i]);
   }
@@ -44,7 +48,11 @@ export function renderMonster(specimen: Monster): void {
       tileWidth,
       tileWidth
     );
-  } else if (
+  }
+}
+export function renderDeadMonster(specimen: Monster): void {
+  if (
+    !specimen.alive &&
     specimen.x - scrollingModifierX <= 10 &&
     specimen.y - scrollingModifierY <= 10
   ) {
@@ -108,10 +116,10 @@ export function iterateList(input: any): void {
 
 export const losArray: number[][] = [];
 
-export function checkLineOfSight() {
+export function checkLineOfSight(monsterX: number, monsterY: number) {
   losArray.length = 0;
-  let x1 = 5;
-  let y1 = 5;
+  let x1 = monsterX;
+  let y1 = monsterY;
   let x0 = heroStats.x;
   let y0 = heroStats.y;
   let sx = x0 < x1 ? 1 : -1;
@@ -124,6 +132,10 @@ export function checkLineOfSight() {
 
   let break50 = 0;
   while (true) {
+    if (break50 > 50) {
+      console.log('infinite loop broken');
+      break;
+    }
     if (x0 === x1 && y0 === y1) {
       break;
     }
@@ -152,12 +164,16 @@ export function checkLineOfSight() {
     if (!isLOSunblocked(losArray[i][0], losArray[i][1])) unblocked = false;
   }
 
-  if (unblocked) paintPathToHero();
+  if (unblocked) {
+    // paintPathToHero(monsterX, monsterY);
+    return true;
+  } else return false;
 }
 
-export function paintPathToHero() {
-  pathToPaint = findShortestPath(5, 5, heroStats.x, heroStats.y);
-}
+// export function paintPathToHero(x: number, y: number) {
+//   pathToPaint = findShortestPath(x, y, heroStats.x, heroStats.y);
+//   return pathToPaint;
+// }
 
 interface Node {
   thisNodeX: number;
@@ -173,12 +189,6 @@ export function findShortestPath(
   targetX: number,
   targetY: number
 ) {
-  console.log(
-    `Attempting to find path from (${startX + ',' + startY}) to (${
-      targetX + ',' + targetY
-    })`
-  );
-
   let currentNode: Node = {
     thisNodeX: startX,
     thisNodeY: startY,
@@ -261,7 +271,6 @@ export function findShortestPath(
         );
         previous = previous2;
       }
-      console.log(...shortestPath);
       return shortestPath.reverse();
       break loop1;
     }
@@ -304,25 +313,50 @@ export function isLOSunblocked(x: number, y: number): boolean {
 export function attemptToMoveMonster(specimen: Monster): void {
   if (escapedown) return;
   if (specimen.alive && specimen.speed > 0) {
-    let direction: number = 0;
-    let hasMoved: boolean = false;
-    let stopIfInfinite: number = 0;
-    while (!hasMoved) {
-      if (stopIfInfinite > 100) break;
-      direction = Math.floor(Math.random() * 4) + 1;
-      monsterDestination(direction, specimen);
+    if (checkLineOfSight(specimen.x, specimen.y) && specimen.image != 'witch') {
+      specimen.path.length = 0;
+      specimen.path = findShortestPath(
+        specimen.x,
+        specimen.y,
+        heroStats.x,
+        heroStats.y
+      );
+      console.log('new path');
+      specimen.path.shift();
+      console.log(...specimen.path);
+      updateDestination(specimen.path[0][0], specimen.path[0][1]);
+    } else if (specimen.path.length > 0) {
+      console.log('existing path');
+      console.log(...specimen.path);
 
-      if (
-        checkIfMoveAllowed() &&
-        checkOtherMonsters(specimen) &&
-        specimen.image != 'door'
-      ) {
-        specimen.x = getDestination()[0];
-        specimen.y = getDestination()[1];
-        hasMoved = true;
+      updateDestination(specimen.path[0][0], specimen.path[0][1]);
+      specimen.path.shift();
+    } else {
+      let direction: number = 0;
+      let hasMoved: boolean = false;
+      let stopIfInfinite: number = 0;
+      while (!hasMoved) {
+        if (stopIfInfinite > 100) break;
+        direction = Math.floor(Math.random() * 4) + 1;
+        monsterDestination(direction, specimen);
+
+        if (
+          checkIfMoveAllowed() &&
+          checkOtherMonsters(specimen) &&
+          specimen.image != 'door'
+        ) {
+          hasMoved = true;
+        }
+        stopIfInfinite++;
       }
-      stopIfInfinite++;
-      //}
+    }
+    if (
+      checkIfMoveAllowed() &&
+      checkOtherMonsters(specimen) &&
+      specimen.image != 'door'
+    ) {
+      specimen.x = getDestination()[0];
+      specimen.y = getDestination()[1];
     }
   }
 }
@@ -349,7 +383,8 @@ function checkOtherMonsters(specimen: Monster) {
     if (i == specimen.orderNumber) continue;
     if (
       monsterList[i].x == getDestination()[0] &&
-      monsterList[i].y == getDestination()[1]
+      monsterList[i].y == getDestination()[1] &&
+      monsterList[i].alive
     ) {
       return false;
     }

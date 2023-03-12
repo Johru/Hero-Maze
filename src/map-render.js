@@ -1,6 +1,6 @@
 "use strict";
 exports.__esModule = true;
-exports.printstats = exports.renderPauseScreen = exports.renderWalls = exports.paintLos = exports.paintPath = exports.renderFloor = exports.clearCanvas = void 0;
+exports.printstats = exports.renderPauseScreen = exports.renderWalls = exports.paintLos = exports.renderFloor = exports.clearCanvas = void 0;
 var variables_1 = require("./variables");
 var utility_1 = require("./utility");
 var index_1 = require("./index");
@@ -17,15 +17,20 @@ function renderFloor() {
     }
 }
 exports.renderFloor = renderFloor;
-function paintPath() {
-    for (var i = 1; i < monster_1.pathToPaint.length; i++) {
-        variables_1.ctx.fillStyle = 'grey';
-        variables_1.ctx.fillRect((monster_1.pathToPaint[i][0] - 1) * variables_1.tileWidth + 5, (monster_1.pathToPaint[i][1] - 1) * variables_1.tileWidth + 5, 52, 52);
-    }
-    variables_1.ctx.fillStyle = 'black';
-}
-exports.paintPath = paintPath;
-function paintLos() {
+// export function paintPath(x: number, y: number) {
+//   // let pathToPaint = paintPathToHero(x, y);
+//   for (let i = 1; i < pathToPaint.length; i++) {
+//     ctx.fillStyle = 'grey';
+//     ctx.fillRect(
+//       (pathToPaint[i][0] - 1) * tileWidth + 5,
+//       (pathToPaint[i][1] - 1) * tileWidth + 5,
+//       52,
+//       52
+//     );
+//   }
+//   ctx.fillStyle = 'black';
+// }
+function paintLos(x, y) {
     for (var i = 0; i < monster_1.losArray.length; i++) {
         variables_1.ctx.fillStyle = 'yellow';
         variables_1.ctx.fillRect((monster_1.losArray[i][0] - 1) * variables_1.tileWidth + (variables_1.tileWidth - 25) / 2, (monster_1.losArray[i][1] - 1) * variables_1.tileWidth + (variables_1.tileWidth - 25) / 2, 25, 25);
@@ -37,7 +42,7 @@ function paintLos() {
         variables_1.ctx.strokeStyle = 'red';
     variables_1.ctx.beginPath();
     variables_1.ctx.moveTo((variables_1.heroStats.x - 1) * variables_1.tileWidth + variables_1.tileWidth / 2, (variables_1.heroStats.y - 1) * variables_1.tileWidth + variables_1.tileWidth / 2);
-    variables_1.ctx.lineTo(5 * 65 - variables_1.tileWidth / 2, 5 * 65 - variables_1.tileWidth / 2);
+    variables_1.ctx.lineTo(x * 65 - variables_1.tileWidth / 2, y * 65 - variables_1.tileWidth / 2);
     variables_1.ctx.stroke();
     variables_1.ctx.lineWidth = 1;
 }

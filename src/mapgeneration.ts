@@ -59,10 +59,17 @@ export let wallSetup: number[][] = [
     11, 19, 15, 19, 18, 19, 11, 20, 12, 20, 15, 20, 18, 20,
   ],
 ];
-export let witchSetup: number[][] = [[], [7, 10], [1, 7], [1, 4, 1, 18]];
-export let greenDoorSetup: number[][] = [[], [9, 8], [14, 15], [5, 1, 1, 15]];
+export let witchSetup: number[][] = [
+  [7, 10],
+  [1, 7],
+  [1, 4, 1, 18],
+];
+export let greenDoorSetup: number[][] = [
+  [9, 8],
+  [14, 15],
+  [5, 1, 1, 15],
+];
 export let greenChestSetup: number[][] = [
-  [],
   [10, 1, 1, 10],
   [7, 1, 1, 15],
   [1, 5, 2, 5, 7, 2, 13, 4, 14, 6, 14, 7, 15, 11, 19, 11, 12, 15, 4, 18],
@@ -78,12 +85,15 @@ export let redChestSetup: number[][] = [
   [7, 3, 20, 1, 2, 9, 8, 11, 14, 19, 1, 20],
 ];
 export let skeletonSetup: number[][] = [
-  [5, 5],
   [6, 6, 9, 2, 2, 9],
   [3, 4, 11, 4, 14, 4, 10, 12, 4, 14],
   [6, 2, 4, 5, 1, 9, 14, 4, 16, 7, 16, 11, 20, 12, 7, 15],
 ];
-export let bossSetup: number[][] = [[], [9, 9], [13, 15], [19, 20]];
+export let bossSetup: number[][] = [
+  [9, 9],
+  [13, 15],
+  [19, 20],
+];
 export let guardSetup: number[][] = [
   [],
   [7, 2, 8, 10],

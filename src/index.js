@@ -35,11 +35,9 @@ exports.interval = setInterval(tickController, variables_1.moveEveryXMiliseconds
 function tickController() {
     if (variables_1.heroStats.currentHP < 1)
         return;
-    (0, monster_1.checkLineOfSight)();
     for (var _i = 0, monsterList_1 = variables_1.monsterList; _i < monsterList_1.length; _i++) {
         var specimen = monsterList_1[_i];
-        // console.log(specimen.image + specimen.orderNumber);
-        // attemptToMoveMonster(specimen);
+        (0, monster_1.attemptToMoveMonster)(specimen);
     }
 }
 function resetScrolling() {
@@ -70,8 +68,6 @@ function updateGameState() {
     (0, map_render_1.clearCanvas)();
     (0, map_render_1.renderFloor)();
     (0, map_render_1.renderWalls)();
-    (0, map_render_1.paintPath)();
-    (0, map_render_1.paintLos)();
     (0, map_render_1.printstats)();
     (0, monster_1.renderAllMonsters)();
     (0, hero_1.setHeroLevel)();

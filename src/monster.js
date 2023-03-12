@@ -1,6 +1,6 @@
 "use strict";
 exports.__esModule = true;
-exports.checkIfBattleForMonsters = exports.assignKey = exports.attemptToMoveMonster = exports.isLOSunblocked = exports.findShortestPath = exports.paintPathToHero = exports.checkLineOfSight = exports.losArray = exports.iterateList = exports.resetMonsters = exports.renderMonster = exports.renderAllMonsters = exports.unblocked = exports.pathToPaint = void 0;
+exports.checkIfBattleForMonsters = exports.assignKey = exports.attemptToMoveMonster = exports.isLOSunblocked = exports.findShortestPath = exports.checkLineOfSight = exports.losArray = exports.iterateList = exports.resetMonsters = exports.renderDeadMonster = exports.renderMonster = exports.renderAllMonsters = exports.unblocked = exports.pathToPaint = void 0;
 var variables_1 = require("./variables");
 var utility_1 = require("./utility");
 var index_1 = require("./index");
@@ -9,6 +9,9 @@ exports.pathToPaint = [];
 // import cloneDeep from 'lodash.clonedeep';
 exports.unblocked = false;
 function renderAllMonsters() {
+    for (var i = 0; i < variables_1.monsterList.length; i++) {
+        renderDeadMonster(variables_1.monsterList[i]);
+    }
     for (var i = 0; i < variables_1.monsterList.length; i++) {
         renderMonster(variables_1.monsterList[i]);
     }
@@ -20,12 +23,16 @@ function renderMonster(specimen) {
         specimen.y - index_1.scrollingModifierY <= 10) {
         variables_1.ctx.drawImage((0, utility_1.getSpriteByName)(specimen.image), (specimen.x - 1 - index_1.scrollingModifierX) * variables_1.tileWidth, (specimen.y - 1 - index_1.scrollingModifierY) * variables_1.tileWidth, variables_1.tileWidth, variables_1.tileWidth);
     }
-    else if (specimen.x - index_1.scrollingModifierX <= 10 &&
+}
+exports.renderMonster = renderMonster;
+function renderDeadMonster(specimen) {
+    if (!specimen.alive &&
+        specimen.x - index_1.scrollingModifierX <= 10 &&
         specimen.y - index_1.scrollingModifierY <= 10) {
         variables_1.ctx.drawImage(variables_1.blood, (specimen.x - 1 - index_1.scrollingModifierX) * variables_1.tileWidth, (specimen.y - 1 - index_1.scrollingModifierY) * variables_1.tileWidth, variables_1.tileWidth, variables_1.tileWidth);
     }
 }
-exports.renderMonster = renderMonster;
+exports.renderDeadMonster = renderDeadMonster;
 function resetMonsters() {
     for (var _i = 0, monsterList_1 = variables_1.monsterList; _i < monsterList_1.length; _i++) {
         var monster = monsterList_1[_i];
@@ -79,10 +86,10 @@ function iterateList(input) {
 }
 exports.iterateList = iterateList;
 exports.losArray = [];
-function checkLineOfSight() {
+function checkLineOfSight(monsterX, monsterY) {
     exports.losArray.length = 0;
-    var x1 = 5;
-    var y1 = 5;
+    var x1 = monsterX;
+    var y1 = monsterY;
     var x0 = variables_1.heroStats.x;
     var y0 = variables_1.heroStats.y;
     var sx = x0 < x1 ? 1 : -1;
@@ -92,6 +99,10 @@ function checkLineOfSight() {
     var err = (dx > dy ? dx : -dy) / 2;
     var break50 = 0;
     while (true) {
+        if (break50 > 50) {
+            console.log('infinite loop broken');
+            break;
+        }
         if (x0 === x1 && y0 === y1) {
             break;
         }
@@ -119,16 +130,15 @@ function checkLineOfSight() {
         if (!isLOSunblocked(exports.losArray[i][0], exports.losArray[i][1]))
             exports.unblocked = false;
     }
-    if (exports.unblocked)
-        paintPathToHero();
+    if (exports.unblocked) {
+        // paintPathToHero(monsterX, monsterY);
+        return true;
+    }
+    else
+        return false;
 }
 exports.checkLineOfSight = checkLineOfSight;
-function paintPathToHero() {
-    exports.pathToPaint = findShortestPath(5, 5, variables_1.heroStats.x, variables_1.heroStats.y);
-}
-exports.paintPathToHero = paintPathToHero;
 function findShortestPath(startX, startY, targetX, targetY) {
-    console.log("Attempting to find path from (".concat(startX + ',' + startY, ") to (").concat(targetX + ',' + targetY, ")"));
     var currentNode = {
         thisNodeX: startX,
         thisNodeY: startY,
@@ -192,7 +202,6 @@ function findShortestPath(startX, startY, targetX, targetY) {
                 });
                 previous_1 = previous2;
             }
-            console.log.apply(console, shortestPath);
             return { value: shortestPath.reverse() };
             return "break-loop1";
         }
@@ -244,23 +253,42 @@ function attemptToMoveMonster(specimen) {
     if (index_1.escapedown)
         return;
     if (specimen.alive && specimen.speed > 0) {
-        var direction = 0;
-        var hasMoved = false;
-        var stopIfInfinite = 0;
-        while (!hasMoved) {
-            if (stopIfInfinite > 100)
-                break;
-            direction = Math.floor(Math.random() * 4) + 1;
-            monsterDestination(direction, specimen);
-            if ((0, utility_1.checkIfMoveAllowed)() &&
-                checkOtherMonsters(specimen) &&
-                specimen.image != 'door') {
-                specimen.x = (0, variables_1.getDestination)()[0];
-                specimen.y = (0, variables_1.getDestination)()[1];
-                hasMoved = true;
+        if (checkLineOfSight(specimen.x, specimen.y) && specimen.image != 'witch') {
+            specimen.path.length = 0;
+            specimen.path = findShortestPath(specimen.x, specimen.y, variables_1.heroStats.x, variables_1.heroStats.y);
+            console.log('new path');
+            specimen.path.shift();
+            console.log.apply(console, specimen.path);
+            (0, variables_1.updateDestination)(specimen.path[0][0], specimen.path[0][1]);
+        }
+        else if (specimen.path.length > 0) {
+            console.log('existing path');
+            console.log.apply(console, specimen.path);
+            (0, variables_1.updateDestination)(specimen.path[0][0], specimen.path[0][1]);
+            specimen.path.shift();
+        }
+        else {
+            var direction = 0;
+            var hasMoved = false;
+            var stopIfInfinite = 0;
+            while (!hasMoved) {
+                if (stopIfInfinite > 100)
+                    break;
+                direction = Math.floor(Math.random() * 4) + 1;
+                monsterDestination(direction, specimen);
+                if ((0, utility_1.checkIfMoveAllowed)() &&
+                    checkOtherMonsters(specimen) &&
+                    specimen.image != 'door') {
+                    hasMoved = true;
+                }
+                stopIfInfinite++;
             }
-            stopIfInfinite++;
-            //}
+        }
+        if ((0, utility_1.checkIfMoveAllowed)() &&
+            checkOtherMonsters(specimen) &&
+            specimen.image != 'door') {
+            specimen.x = (0, variables_1.getDestination)()[0];
+            specimen.y = (0, variables_1.getDestination)()[1];
         }
     }
 }
@@ -286,7 +314,8 @@ function checkOtherMonsters(specimen) {
         if (i == specimen.orderNumber)
             continue;
         if (variables_1.monsterList[i].x == (0, variables_1.getDestination)()[0] &&
-            variables_1.monsterList[i].y == (0, variables_1.getDestination)()[1]) {
+            variables_1.monsterList[i].y == (0, variables_1.getDestination)()[1] &&
+            variables_1.monsterList[i].alive) {
             return false;
         }
     }
