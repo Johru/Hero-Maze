@@ -28,7 +28,7 @@ Note: monsters can now pursue the player through doors but will not pass doors o
 
 Visual demonstration of algos for line of sight and pathfinding below. Both key algos can be found in monster.ts
 
-**Line of Sight** algo is based on Bresenham's line drawing algorithm. Bresenham only draws a single line from square pixels, but uses a simple system of angles to operate only with whole numbers. My LOS is extended to return a list of every square intersected by the line between the player and a monster.
+**Line of Sight** algo is based on Bresenham's line drawing algorithm. Bresenham only draws a single line from square pixels, but uses a simple system of angles to operate only with whole numbers. My LOS is extended to return a list of every square significantly intersected by the line between the player and a monster.
 
 **Pathfinding** algo is an simple version of A* search. It creates a linked list of nodes. It's heuristic is based on number of previous steps and remaining distance to target. Thus the shortest path to target through unobstructed squares is returned.
 
