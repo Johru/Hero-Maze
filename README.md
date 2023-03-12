@@ -11,7 +11,7 @@ This is an extension of a school project, slowly being upgraded to be a real gam
 There are four types of monsters:
 
 1. Boss\: a single dangerous monster, best avoided!
-2. Witches \: blue robed little creatures hold key to various doors\.
+2. Witches \: blue robed little creatures hold key to the main doors.
 3. Goblins\: pesky little creatures, low danger\. Kill them to level up\. 
 4. Guards\: strong and numerous, they will be the main obstacle in higher levels\. Best avoided!
 
