@@ -20,7 +20,7 @@ Every monster except Witches will pursue the player, with following order of pri
 2. if it can't see the player, it will continue towards last seen player location
 3. Once last player location is explored, monster moves randomly
 
-**To be implemented: ** monsters will have fixed patrol path and instead of random movement will return to last visited step on patrol path when they reach last known player location.
+**To be implemented:** monsters will have fixed patrol path and instead of random movement will return to last visited step on patrol path when they reach last known player location.
 
 Note: monsters can now pursue the player through doors but will not pass doors otherwise.
 
