@@ -10,10 +10,10 @@ This is an extension of a school project, slowly being upgraded to be a real gam
 
 There are four types of monsters:
 
-+Boss: a single dangerous monster, best avoided!
-+Witches : blue robed little creatures hold key to various doors.
-+Goblins: pesky little creatures, low danger. Kill them to level up. 
-+Guards: strong and numerous, they will be the main obstacle in higher levels. Best avoided!
++Boss\: a single dangerous monster, best avoided!
++Witches \: blue robed little creatures hold key to various doors.
++Goblins\: pesky little creatures, low danger. Kill them to level up. 
++Guards\: strong and numerous, they will be the main obstacle in higher levels. Best avoided!
 
 Every monster except Witches will pursue the player, with following order of priority.
 1. if the monster sees player when it's about to move, it will find the shortest path to the player square
