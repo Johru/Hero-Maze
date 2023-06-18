@@ -4,7 +4,7 @@ Hero maze is a simple maze crawling game. As a mighty, but not immortal hero, yo
 
 ## About
 
-This is an extension of a school project, slowly being upgraded to be a real game. All graphics are placeholders, but gameplay is already approaching completion. Current stable version is published here: [http://johru.wz.cz](http://johru.wz.cz), development version in this repo.
+This is an extension of a school project, slowly being upgraded to be a real game. All graphics are placeholders, but gameplay is already approaching completion. 
 
 ## Monster AI
 
